@@ -5,11 +5,6 @@ LightningGenerator::LightningGenerator()
 
 }
 
-void LightningGenerator::regenLightning_optimised()
-{
-
-}
-
 void LightningGenerator::regenLightning_multithread()
 {
 
@@ -18,10 +13,32 @@ void LightningGenerator::regenLightning_multithread()
 void LightningGenerator::regenLightning_other()
 {
 
+
+}
+
+void LightningGenerator::regenLightning_optimised()
+{
+	grid_steps_made = 0;
+	
+	initialiseGrid();
+
+
+	int starting_x = configuration->x_size / 2;
+	int starting_z = configuration->z_size / 2;
+	LightningCell intialCharge = LightningCell(starting_x, 0, starting_z, starting_x, 0, starting_z);
+	lightning_points.push_back(intialCharge);
+	
+	while (!reached_edge)
+	{
+		performLightningStep_optimised();
+	}
+
+	std::cout << "grid steps" << grid_steps_made << std::endl;
 }
 
 void LightningGenerator::regenLightning_unoptimised()
 {
+	grid_steps_made = 0;
 
 	initialiseGrid();
 
@@ -29,6 +46,53 @@ void LightningGenerator::regenLightning_unoptimised()
 	{
 		performLightningStep();
 	}
+
+	std::cout << "grid steps" << grid_steps_made << std::endl;
+}
+
+void LightningGenerator::performLightningStep_optimised()
+{
+	bool is_within_tolerance = true;
+
+	int loops = 0;
+
+	while (is_within_tolerance)
+	{
+		is_within_tolerance = calculateGridStep();
+		loops++;
+
+		if (loops >= MAX_GRADIENT_LAPLACE_LOOPS)
+		{
+			is_within_tolerance = false;
+		}
+	}
+
+	collectCandidates_optimised(); // todo: fix bug in here
+	selectLightningCell();
+}
+
+
+void LightningGenerator::performLightningStep()
+{
+	bool is_within_tolerance = true;
+
+	int loops = 0;
+
+	while (is_within_tolerance)
+	{
+		is_within_tolerance = calculateGridStep();
+		loops++;
+
+		if (loops >= MAX_GRADIENT_LAPLACE_LOOPS)
+		{
+			is_within_tolerance = false;
+		}
+	}
+
+	collectCandidates();
+	selectLightningCell();
+
+	resetPotentialGrid();
 }
 
 void LightningGenerator::createStartingGrid()
@@ -190,7 +254,7 @@ void LightningGenerator::checkCandidacy(int x_pos, int y_pos, int z_pos)
 	}
 }
 
-void LightningGenerator::selectLightningCell()
+void LightningGenerator::collectCandidates()
 {
 	candidates.clear();
 
@@ -204,13 +268,80 @@ void LightningGenerator::selectLightningCell()
 				{
 					continue;
 				}
-
-
-
 				checkCandidacy(x, y, z);
 			}
 		}
 	}
+}
+
+void LightningGenerator::collectCandidates_optimised()
+{
+	//instead of going through every air cell, we will go through each lightning cell and check them instead
+	// todo: currently can get duplicate candidates, create a second check candidacy function
+
+	candidates.clear();
+	bool is_ground_candidate_found = false;
+
+	for (auto & point : lightning_points) // for each lightning cell
+	{
+		for (int x = -1; x <= 1; x++) // check neighbours
+		{
+			for (int y = -1; y <= 1; y++)
+			{
+				for (int z = -1; z <= 1; z++)
+				{
+
+					if (x == 0 && y == 0 && z == 0) continue;// skip self
+					if (point.x + x >= configuration->x_size || point.y + y >= configuration->y_size || point.z + z >= configuration->z_size || point.x + x < 0 || point.y + y < 0 || point.z + z < 0) continue;  // if checking cells that are out of bounds skip
+					if (potentials[point.z + z][point.y + y][point.x + x] == 0) continue;//skip other lightning cells or boundaries
+
+					// as we've skipped everything else, this cell must be air or ground
+
+					// if it's ground we want to only select it
+
+					if (starting[point.z + z][point.y + y][point.x + x] == 1) // check if candidate ground is next to lightning
+					{
+						is_ground_candidate_found = true;
+						reached_edge = true;
+					}
+
+					//  define this as a candidate
+
+					candidate_cell temp;
+
+					temp.potential = potentials[point.z + z][point.y + y][point.x + x];
+					temp.x = point.x + x;
+					temp.y = point.y + y;
+					temp.z = point.z + z;
+
+					temp.parent_x = point.x;
+					temp.parent_y = point.y;
+					temp.parent_z = point.z;
+
+					// if it was a ground we get rid of the rest
+
+					if (is_ground_candidate_found)
+					{
+						candidates.clear();
+						candidates.push_back(temp);
+						break;
+					}
+
+					// todo: need a way to check if this candidate already exists, so that we dont duplicate candidates
+
+					candidates.push_back(temp);
+				}
+			}
+		}
+	}
+}
+
+
+
+
+void LightningGenerator::selectLightningCell()
+{
+
 
 	// formula for probability
 	// https://onlinelibrary.wiley.com/cms/asset/6dcd580c-06ae-421c-acf7-f5449d06a5e4/cav1760-math-0002.png
@@ -271,28 +402,6 @@ void LightningGenerator::resetPotentialGrid()
 	}
 }
 
-void LightningGenerator::performLightningStep()
-{
-	bool is_within_tolerance = true;
-
-	int loops = 0;
-
-	while (is_within_tolerance)
-	{
-		is_within_tolerance = calculateGridStep();
-		loops++;
-
-		if (loops >= MAX_GRADIENT_LAPLACE_LOOPS)
-		{
-			is_within_tolerance = false;
-		}
-	}
-
-	selectLightningCell();
-
-	resetPotentialGrid();
-}
-
 float LightningGenerator::calculateLaplace(int x_pos, int y_pos, int z_pos)
 {
 	float left = potentials[z_pos][y_pos - 1][x_pos];
@@ -310,6 +419,9 @@ float LightningGenerator::calculateLaplace(int x_pos, int y_pos, int z_pos)
 
 bool LightningGenerator::calculateGridStep()
 {
+	grid_steps_made++;
+
+
 	bool is_within_tolerance = false;
 
 	const float tolerance = 0.005;

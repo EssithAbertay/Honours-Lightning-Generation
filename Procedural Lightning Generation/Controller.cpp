@@ -20,15 +20,21 @@ void Controller::render(Config & configuration)
 
 		ImGui::Checkbox("Bounding Box", &configuration.is_bounding_box);
 
-		static int method = static_cast<int>(configuration.method);
+		static int method_val = 0;
 
-		ImGui::RadioButton("Unoptimised", &method, 0);
+		ImGui::RadioButton("Unoptimised", &method_val, 0);
 		ImGui::SameLine();
-		ImGui::RadioButton("Optimised", &method, 1);
+		ImGui::RadioButton("Optimised", &method_val, 1);
 		ImGui::SameLine();
-		ImGui::RadioButton("Multithreaded + Optimised", &method, 2);
+		ImGui::RadioButton("Multithreaded + Optimised", &method_val, 2);
 		ImGui::SameLine();
-		ImGui::RadioButton("Other", &method, 3);
+		ImGui::RadioButton("Other", &method_val, 3);
+
+
+		configuration.method = static_cast<GENERATION_METHOD>(method_val);
+
+
+
 
 		if (ImGui::Button("Regenerate Lightning"))
 		{

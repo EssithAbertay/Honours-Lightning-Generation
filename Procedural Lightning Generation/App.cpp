@@ -98,7 +98,16 @@ void App::Update()
     }
     else if (lightning_config.is_regenerate_this_frame)
     {
+
+        auto time_at_start = std::chrono::high_resolution_clock::now();
+
         lightning.regenLightning();
+
+        auto time_at_end = std::chrono::high_resolution_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_at_end - time_at_start);
+
+
+        std::cout << "Time Taken: " << duration.count() <<"ms" << std::endl;
 
         lightning_config.is_regenerate_this_frame = false;
     }

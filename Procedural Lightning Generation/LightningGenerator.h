@@ -32,10 +32,17 @@ private:
 	void createStartingGrid();
 	void initialiseGrid();
 
+	void performLightningStep();
+	void performLightningStep_optimised();
+
+	void collectCandidates();
+	void collectCandidates_optimised();
+	
 	void checkCandidacy(int x_pos, int y_pos, int z_pos);
+
 	void selectLightningCell();
 	void resetPotentialGrid();
-	void performLightningStep();
+	
 	float calculateLaplace(int x_pos, int y_pos, int z_pos);
 	bool calculateGridStep();
 
@@ -61,5 +68,7 @@ private:
 	int MAX_GRADIENT_LAPLACE_LOOPS = 50; // todo: shouldnt be all caps
 
 	bool reached_edge = false; // todo: shouldnt be global
+
+	int grid_steps_made = 0;
 };
 
