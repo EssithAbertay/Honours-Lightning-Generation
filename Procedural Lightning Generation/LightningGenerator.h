@@ -22,10 +22,6 @@ public:
 	void setConfig(Config* config)
 	{
 		configuration = config;
-
-		starting_test.setConfig(config);
-		potentials_test.setConfig(config);
-		new_potentials_test.setConfig(config);
 	}
 
 	std::vector<LightningCell>* getLightningPointsPtr() {
@@ -60,13 +56,6 @@ private:
 	std::vector<candidate_cell> candidates;
 
 	Config * configuration = nullptr;
-
-	// todo: consider one volume that stores all three?
-
-	LightningVolume starting_test;
-	LightningVolume potentials_test;
-	LightningVolume new_potentials_test;
-
 
 	const int LIGHTNING_STEPS = 30;
 	int MAX_GRADIENT_LAPLACE_LOOPS = 50; // todo: shouldnt be all caps
