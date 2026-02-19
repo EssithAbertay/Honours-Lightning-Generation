@@ -290,8 +290,6 @@ void LightningGenerator::performLightningStep()
 
 	selectLightningCell();
 
-	potentials_test;
-
 	resetPotentialGrid();
 }
 
