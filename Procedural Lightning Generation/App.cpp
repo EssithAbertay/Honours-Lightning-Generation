@@ -87,7 +87,6 @@ void App::Update()
                    lightning_config.avg_times.push_back(average_time); // log time as number gets big
                    lightning_config.min_times.push_back(lightning_config.min_time);
                    lightning_config.max_times.push_back(lightning_config.max_time);
-                   
                 }
             }
         }
@@ -106,6 +105,16 @@ void App::Update()
         auto time_at_end = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_at_end - time_at_start);
 
+
+        SavedGeneration temp;
+        temp.x_size = lightning_config.x_size;
+        temp.y_size = lightning_config.y_size;
+        temp.z_size = lightning_config.z_size;
+        temp.method_used = lightning_config.method;
+        temp.eta = lightning_config.eta;
+        temp.time = duration.count();
+        
+        lightning_config.saved_info.push_back(temp);
 
         std::cout << "Time Taken: " << duration.count() <<"ms" << std::endl;
 

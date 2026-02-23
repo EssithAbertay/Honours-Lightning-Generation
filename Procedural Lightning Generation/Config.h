@@ -9,6 +9,14 @@ enum GENERATION_METHOD
 	other,
 };
 
+struct SavedGeneration
+{
+	int x_size, y_size, z_size;
+	float time;
+	int eta;
+
+	GENERATION_METHOD method_used;
+};
 
 struct Config
 {
@@ -42,4 +50,10 @@ public:
 
 	std::vector<float> xs, ys, zs;
 	std::vector<float> avg_times, min_times, max_times;
+
+
+	// stroing generation data
+
+	std::vector<SavedGeneration> saved_info;
 };
+

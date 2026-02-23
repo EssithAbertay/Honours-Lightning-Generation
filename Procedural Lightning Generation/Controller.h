@@ -5,6 +5,11 @@
 #include "implot3d.h"
 #include "implot3d_internal.h"
 
+#include "string"
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+
 class Controller
 {
 public:
@@ -20,5 +25,8 @@ public:
 
 	void init(bool dark_mode = false);
 	void render(Config & configuration);
+
+private:
+	const char* MethodToString(GENERATION_METHOD m);
 };
 

@@ -110,13 +110,52 @@ void Controller::render(Config & configuration)
 	
 	ImGui::End();
 	
-	ImGui::Begin("Previous Results");
+	ImGui::Begin("Previous Results", NULL);
+
+	if (ImGui::Button("Write data to file (will overwrite previous)"))
+	{
+		std::ofstream data_file("data.txt");
+
+		for (auto x : configuration.saved_info)
+		{
+			data_file << "Size: " << x.x_size << "," << x.y_size << "," << x.z_size << " Eta:" << std::fixed << x.eta << " Method: " << std::fixed << MethodToString(x.method_used) << " Time:" << std::fixed << x.time << "ms\n";
+		}
+
+		data_file.close();
+	}
 
 	// display generation parameters and results, time, sizes, eta, methods etc, maybe store all previously generated structures as well,  have them viewable? 
+	for (auto x : configuration.saved_info)
+	{
+		ImGui::Text(
+			"Size: %d, %d, %d\n"
+			"Eta: %.3f\n"
+			"Method: %s\n"
+			"Time Taken: %.2f ms \n",
+			x.x_size,
+			x.y_size,
+			x.z_size,
+			x.eta,
+			MethodToString(x.method_used),
+			x.time
+		);
+	}
 
 	ImGui::End();
 
 
 	ImPlot3D::DestroyContext();
     rlImGuiEnd();
+}
+
+const char* Controller::MethodToString(GENERATION_METHOD m)
+{
+	switch (m)
+	{
+	case GENERATION_METHOD::unoptimised:      return "Unoptimised";
+	case GENERATION_METHOD::optimised: return "Optimised";
+	case GENERATION_METHOD::multithread:     return "Multithreaded";
+	case GENERATION_METHOD::other:     return "Other";
+	default:                 return "Unknown";
+	}
 }

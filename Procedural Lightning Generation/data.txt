@@ -1,0 +1,10 @@
+Size: 5,5,5 Eta:1 Method: Unoptimised Time:0.000000
+Size: 5,5,5 Eta:1 Method: Unoptimised Time:0.000000
+Size: 5,5,5 Eta:1 Method: Unoptimised Time:0.000000
+Size: 5,5,5 Eta:1 Method: Unoptimised Time:0.000000
+Size: 5,5,5 Eta:1 Method: Unoptimised Time:0.000000
+Size: 5,5,5 Eta:1 Method: Unoptimised Time:0.000000
+Size: 5,5,5 Eta:1 Method: Unoptimised Time:0.000000
+Size: 5,5,5 Eta:1 Method: Unoptimised Time:0.000000
+Size: 5,5,5 Eta:1 Method: Unoptimised Time:0.000000
+Size: 5,5,5 Eta:1 Method: Unoptimised Time:0.000000
