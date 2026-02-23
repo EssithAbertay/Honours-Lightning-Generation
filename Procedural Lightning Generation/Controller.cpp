@@ -12,9 +12,19 @@ void Controller::render(Config & configuration)
 	ImPlot3D::CreateContext();
 
 	ImGui::Begin("Controls", NULL);
-	    ImGui::SliderInt("X Size", &configuration.x_size, 5, 30);
-	    ImGui::SliderInt("Y Size", &configuration.y_size, 5, 30);
-	    ImGui::SliderInt("Z Size", &configuration.z_size, 5, 30);
+	    ImGui::SliderInt("X Size", &configuration.x_size, 5, 100);
+	    ImGui::SliderInt("Y Size", &configuration.y_size, 5, 100);
+	    ImGui::SliderInt("Z Size", &configuration.z_size, 5, 100);
+
+		ImGui::Checkbox("Force 1:2:1 Volume ratio", &configuration.force_ratio);
+
+		if (configuration.force_ratio)
+		{
+			int new_size = std::max(configuration.y_size / 2, 5);
+			configuration.x_size = new_size;
+			configuration.z_size = new_size;
+		}
+
 
 	    ImGui::SliderInt("Eta", &configuration.eta, 1, 10);
 
@@ -100,6 +110,13 @@ void Controller::render(Config & configuration)
 	
 	ImGui::End();
 	
+	ImGui::Begin("Previous Results");
+
+	// display generation parameters and results, time, sizes, eta, methods etc, maybe store all previously generated structures as well,  have them viewable? 
+
+	ImGui::End();
+
+
 	ImPlot3D::DestroyContext();
     rlImGuiEnd();
 }

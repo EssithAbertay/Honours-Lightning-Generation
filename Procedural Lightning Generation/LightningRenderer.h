@@ -19,6 +19,6 @@ private:
 
 	int segment_size = 4; 
 
-	int x_size = 0, y_size = 0, z_size = 0;
+	int x_size = 5, y_size = 5, z_size = 5;
 };
 

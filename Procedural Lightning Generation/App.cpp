@@ -4,7 +4,7 @@
 
 void App::Run()
 {
-    InitWindow(1000, 1000, "3D DBM Lightning");
+    InitWindow(1600, 900, "3D DBM Lightning");
     SetTargetFPS(60);
 
     imgui_controller.init();
@@ -14,7 +14,7 @@ void App::Run()
     camera.position = Vector3({ 20.0f, 20.0f, 20.0f });  // Camera position
     camera.target = Vector3({ 0.0f, 0.0f, 0.0f });      // Camera looking at point
     camera.up = Vector3({ 0.0f, 1.0f, 0.0f });          // Camera up vector (rotation towards target)
-    camera.fovy = 45.0f;                                // Camera field-of-view Y
+    camera.fovy = 120.0f; // Camera field-of-view Y
     camera.projection = CAMERA_ORTHOGRAPHIC;             // Camera mode type
 
 

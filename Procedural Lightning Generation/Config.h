@@ -13,11 +13,13 @@ enum GENERATION_METHOD
 struct Config
 {
 public:
-	int max_dimension = 30;
+	int max_dimension = 100;
 
 	int x_size = 5;
 	int y_size = 5;
 	int z_size = 5;
+
+	bool force_ratio = false;
 
 	int eta = 1;
 

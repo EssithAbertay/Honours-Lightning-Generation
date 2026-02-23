@@ -1,14 +1,17 @@
 #include "LightningRenderer.h"
 
+#include <iostream>
+
 void LightningRenderer::render()
 {	
 	
-	if (segment_size * std::max(y_size, std::max(x_size,z_size)) > 50)
-	{
-		segment_size = 50 / y_size;
-	}
+	//if (segment_size * std::max(y_size, std::max(x_size,z_size)) > 50)
+	//{
+		segment_size = (GetScreenHeight()/9) / std::max(y_size, std::max(x_size, z_size));
+	//}
+	int y_offset = segment_size;
 
-	Vector3 position = { float(configuration->x_size * segment_size), (configuration->y_size + 1) * segment_size / 2,  -float(configuration->z_size * segment_size) -15};
+	Vector3 position = { float(configuration->x_size * segment_size), (configuration->y_size + (configuration->y_size / 2)) * segment_size / 2,  -float(std::max(y_size, std::max(x_size, z_size)) * segment_size - (segment_size * 3)) };
 
 	if (configuration->x_size != x_size || configuration->y_size != y_size || configuration->z_size != z_size)
 	{
@@ -21,9 +24,10 @@ void LightningRenderer::render()
 	
 
 	
-	int y_offset = segment_size;
+	
 
 
+	// keep the camera always looking at the centre of the structure
 
 	Vector3 centre = { float(x_size * segment_size / 2), float(y_size * segment_size / 2),  float(z_size * segment_size / 2) };
 	camera->target = centre;
