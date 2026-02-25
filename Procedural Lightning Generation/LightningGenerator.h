@@ -9,6 +9,8 @@
 #include <chrono>
 #include <string>
 
+#include <unordered_set>
+
 class LightningGenerator
 {
 public:
@@ -41,6 +43,7 @@ private:
 	void checkCandidacy(int x_pos, int y_pos, int z_pos);
 
 	void selectLightningCell();
+	
 	void resetPotentialGrid();
 	
 	float calculateLaplace(int x_pos, int y_pos, int z_pos);
@@ -50,7 +53,17 @@ private:
 	{
 		int x, y, z, parent_x, parent_y, parent_z;
 		float potential, probability;
+
+		bool operator==(const candidate_cell& other) const {
+			return x == other.x &&
+				y == other.y &&
+				z == other.z;
+		}
 	};
+
+
+
+	std::mt19937 gen{ std::random_device{}() };
 
 	std::vector<LightningCell> lightning_points;
 

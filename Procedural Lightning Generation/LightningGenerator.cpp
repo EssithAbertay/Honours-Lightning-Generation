@@ -22,10 +22,11 @@ void LightningGenerator::regenLightning_optimised()
 	
 	initialiseGrid();
 
-
+	// need to set an initial lightning spot for the optimised version
 	int starting_x = configuration->x_size / 2;
 	int starting_z = configuration->z_size / 2;
 	LightningCell intialCharge = LightningCell(starting_x, 0, starting_z, starting_x, 0, starting_z);
+
 	lightning_points.push_back(intialCharge);
 	
 	while (!reached_edge)
@@ -314,6 +315,23 @@ void LightningGenerator::collectCandidates_optimised()
 					temp.y = point.y + y;
 					temp.z = point.z + z;
 
+					// check if this candidate already exists, so that we dont duplicate candidates
+
+					bool duplicate = false;
+					for (auto x : candidates) // dont like doing it like this, should use a map/set instead
+					{
+						if (temp == x)
+						{
+							duplicate = true;
+							break;
+						}
+					}
+
+					if (duplicate)
+					{
+						continue;
+					}
+
 					temp.parent_x = point.x;
 					temp.parent_y = point.y;
 					temp.parent_z = point.z;
@@ -327,17 +345,12 @@ void LightningGenerator::collectCandidates_optimised()
 						break;
 					}
 
-					// todo: need a way to check if this candidate already exists, so that we dont duplicate candidates
-
 					candidates.push_back(temp);
 				}
 			}
 		}
 	}
 }
-
-
-
 
 void LightningGenerator::selectLightningCell()
 {
@@ -359,8 +372,6 @@ void LightningGenerator::selectLightningCell()
 	}
 
 	// taken from cpp reference  https://en.cppreference.com/w/cpp/numeric/random/generate_canonical.html
-	std::random_device rd;
-	std::mt19937 gen(rd());
 	float rnd = std::generate_canonical<float, 10>(gen);
 
 	int chosen_candidate = 0;
@@ -424,7 +435,7 @@ bool LightningGenerator::calculateGridStep()
 
 	bool is_within_tolerance = false;
 
-	const float tolerance = 0.005;
+	float tolerance = configuration->gradient_tolerance;
 
 	for (int z = 1; z < configuration->z_size-1; z++)
 	{

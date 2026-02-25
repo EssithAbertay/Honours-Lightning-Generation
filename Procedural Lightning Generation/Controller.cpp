@@ -25,8 +25,32 @@ void Controller::render(Config & configuration)
 			configuration.z_size = new_size;
 		}
 
+		ImGui::Checkbox("Reset volume between steps", &configuration.reset_vol_between_steps);
+
+		static int candidate_selection = 0;
+
+		ImGui::Text("Select candidates cells from:");
+		ImGui::RadioButton("Air cells", &candidate_selection, 0);
+		ImGui::SameLine();
+		ImGui::RadioButton("Lightning cells", &candidate_selection, 1);
+
+		// could just be a 0/1 true/false, but switch allows for potential future options
+		switch (candidate_selection) 
+		{
+		case 0:
+			configuration.candidates_from_air = true;
+			break;
+		case 1:
+			configuration.candidates_from_air = false;
+			break;
+		default:
+			break;
+		}
+
 
 	    ImGui::SliderInt("Eta", &configuration.eta, 1, 10);
+
+		ImGui::SliderFloat("Gradient Tolerance", &configuration.gradient_tolerance, 0, 1, "%.3f");
 
 		ImGui::Checkbox("Bounding Box", &configuration.is_bounding_box);
 
@@ -129,9 +153,9 @@ void Controller::render(Config & configuration)
 	{
 		ImGui::Text(
 			"Size: %d, %d, %d\n"
-			"Eta: %.3f\n"
+			"Eta: %d\n"
 			"Method: %s\n"
-			"Time Taken: %.2f ms \n",
+			"Time Taken: %.0f ms \n",
 			x.x_size,
 			x.y_size,
 			x.z_size,

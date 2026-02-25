@@ -29,6 +29,13 @@ public:
 
 	bool force_ratio = false;
 
+	bool reset_vol_between_steps = true;
+
+	// if true, select candidates from air cells, if false select from lightning cells, bad name, is unclear
+	bool candidates_from_air = true; 
+
+	float gradient_tolerance = 0.005;
+
 	int eta = 1;
 
 	bool is_bounding_box = false;
@@ -52,7 +59,7 @@ public:
 	std::vector<float> avg_times, min_times, max_times;
 
 
-	// stroing generation data
+	// storing generation data
 
 	std::vector<SavedGeneration> saved_info;
 };
