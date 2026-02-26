@@ -14,6 +14,9 @@ struct SavedGeneration
 	int x_size, y_size, z_size;
 	float time;
 	int eta;
+	int grid_steps;
+	bool candidates_from_air;
+
 
 	GENERATION_METHOD method_used;
 };
@@ -52,6 +55,9 @@ public:
 	std::vector<float> times;
 	float min_time = std::numeric_limits<float>::max();
 	float max_time = 0;
+
+	int grid_steps = 0;
+
 
 	// graphing most recent
 

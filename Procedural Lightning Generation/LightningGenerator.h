@@ -29,6 +29,8 @@ public:
 	std::vector<LightningCell>* getLightningPointsPtr() {
 		return &lightning_points;
 	}
+
+	int getGridSteps() { return grid_steps_made; }
 private:
 
 	void createStartingGrid();

@@ -34,6 +34,7 @@ void LightningGenerator::regenLightning_optimised()
 		performLightningStep_optimised();
 	}
 
+
 	std::cout << "grid steps" << grid_steps_made << std::endl;
 }
 
@@ -68,7 +69,14 @@ void LightningGenerator::performLightningStep_optimised()
 		}
 	}
 
-	collectCandidates_optimised(); // todo: fix bug in here
+	if (!configuration->candidates_from_air)
+	{
+		collectCandidates_optimised(); // todo: fix bug in here
+	}
+	else
+	{
+		collectCandidates();
+	}
 	selectLightningCell();
 }
 
@@ -430,7 +438,7 @@ float LightningGenerator::calculateLaplace(int x_pos, int y_pos, int z_pos)
 
 bool LightningGenerator::calculateGridStep()
 {
-	grid_steps_made++;
+	grid_steps_made++; // todo: do this with config instead!
 
 
 	bool is_within_tolerance = false;

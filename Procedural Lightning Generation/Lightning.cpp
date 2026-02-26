@@ -2,6 +2,8 @@
 
 void Lightning::regenLightning()
 {
+	configuration->grid_steps = 0;
+
 	switch (configuration->method)
 	{
 	case unoptimised:
@@ -22,5 +24,8 @@ void Lightning::regenLightning()
 		generator.regenLightning_unoptimised();
 		break;
 	}
+
+	configuration->grid_steps = generator.getGridSteps();
+
 }
 

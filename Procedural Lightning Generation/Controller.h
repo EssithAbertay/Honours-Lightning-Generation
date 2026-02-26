@@ -28,5 +28,6 @@ public:
 
 private:
 	const char* MethodToString(GENERATION_METHOD m);
+	const char* CandidateSelectionToString(bool candidate_selection);
 };
 

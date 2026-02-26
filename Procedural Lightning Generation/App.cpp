@@ -113,7 +113,8 @@ void App::Update()
         temp.method_used = lightning_config.method;
         temp.eta = lightning_config.eta;
         temp.time = duration.count();
-        
+        temp.grid_steps = lightning_config.grid_steps;
+        temp.candidates_from_air = lightning_config.candidates_from_air;
         lightning_config.saved_info.push_back(temp);
 
         std::cout << "Time Taken: " << duration.count() <<"ms" << std::endl;

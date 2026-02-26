@@ -142,28 +142,53 @@ void Controller::render(Config & configuration)
 
 		for (auto x : configuration.saved_info)
 		{
-			data_file << "Size: " << x.x_size << "," << x.y_size << "," << x.z_size << " Eta:" << std::fixed << x.eta << " Method: " << std::fixed << MethodToString(x.method_used) << " Time:" << std::fixed << x.time << "ms\n";
+			data_file << "Size: " << x.x_size << "," << x.y_size << "," << x.z_size << " Eta:" << std::fixed << x.eta << " Method: " << std::fixed << MethodToString(x.method_used) << " Time:" << std::fixed << x.time << "ms" << " Grid Steps:" << std::fixed << x.grid_steps << "\n";
 		}
 
 		data_file.close();
 	}
 
 	// display generation parameters and results, time, sizes, eta, methods etc, maybe store all previously generated structures as well,  have them viewable? 
-	for (auto x : configuration.saved_info)
+
+
+	if (ImGui::BeginTable("Generation Info", 6))
 	{
-		ImGui::Text(
-			"Size: %d, %d, %d\n"
-			"Eta: %d\n"
-			"Method: %s\n"
-			"Time Taken: %.0f ms \n",
-			x.x_size,
-			x.y_size,
-			x.z_size,
-			x.eta,
-			MethodToString(x.method_used),
-			x.time
-		);
+		ImGui::TableSetupColumn("Size");
+		ImGui::TableSetupColumn("Eta");
+		ImGui::TableSetupColumn("Method");
+		ImGui::TableSetupColumn("Time (ms)");
+		ImGui::TableSetupColumn("Grid Steps");
+		ImGui::TableSetupColumn("Cell Selection");
+
+		ImGui::TableHeadersRow();
+
+
+		for (auto x : configuration.saved_info)
+		{
+			ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				ImGui::Text(
+					"%d, %d, %d",
+					x.x_size,
+					x.y_size,
+					x.z_size);
+				ImGui::TableSetColumnIndex(1);
+				ImGui::Text("%d",x.eta);
+				ImGui::TableSetColumnIndex(2);
+				ImGui::Text("%s", MethodToString(x.method_used));
+				ImGui::TableSetColumnIndex(3);
+				ImGui::Text(" %.0f", x.time);
+				ImGui::TableSetColumnIndex(4);
+				ImGui::Text("%d",x.grid_steps);
+
+				ImGui::TableSetColumnIndex(5);
+				ImGui::Text("%s", CandidateSelectionToString(x.candidates_from_air));
+			
+		}
+		ImGui::EndTable();
 	}
+
+
 
 	ImGui::End();
 
@@ -176,10 +201,20 @@ const char* Controller::MethodToString(GENERATION_METHOD m)
 {
 	switch (m)
 	{
-	case GENERATION_METHOD::unoptimised:      return "Unoptimised";
-	case GENERATION_METHOD::optimised: return "Optimised";
-	case GENERATION_METHOD::multithread:     return "Multithreaded";
-	case GENERATION_METHOD::other:     return "Other";
-	default:                 return "Unknown";
+	case GENERATION_METHOD::unoptimised:    return "Unoptimised";
+	case GENERATION_METHOD::optimised:		return "Optimised";
+	case GENERATION_METHOD::multithread:    return "Multithreaded";
+	case GENERATION_METHOD::other:			return "Other";
+	default:								return "Unknown";
 	}
+}
+
+const char* Controller::CandidateSelectionToString(bool candidates_from)
+{
+	if (candidates_from)
+	{
+		return "Air";
+	}
+
+	return "Lightning";
 }
