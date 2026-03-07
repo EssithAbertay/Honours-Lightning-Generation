@@ -140,7 +140,7 @@ void Controller::render(Config & configuration)
 	{
 		std::ofstream data_file("data.txt");
 
-		for (auto x : configuration.saved_info)
+		for (auto x : configuration.saved_info) // todo: write data to file
 		{
 			data_file << "Size: " << x.x_size << "," << x.y_size << "," << x.z_size << " Eta:" << std::fixed << x.eta << " Method: " << std::fixed << MethodToString(x.method_used) << " Time:" << std::fixed << x.time << "ms" << " Grid Steps:" << std::fixed << x.grid_steps << "\n";
 		}

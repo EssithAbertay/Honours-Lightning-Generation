@@ -4,6 +4,8 @@ void Lightning::regenLightning()
 {
 	configuration->grid_steps = 0;
 
+	generator.setVars();
+
 	switch (configuration->method)
 	{
 	case unoptimised:

@@ -11,10 +11,14 @@
 
 #include <unordered_set>
 
+#include <sycl/sycl.hpp>
+
 class LightningGenerator
 {
 public:
 	LightningGenerator();
+
+	void setVars();
 
 	void regenLightning_unoptimised();
 	void regenLightning_optimised();
@@ -49,7 +53,13 @@ private:
 	void resetPotentialGrid();
 	
 	float calculateLaplace(int x_pos, int y_pos, int z_pos);
+
 	bool calculateGridStep();
+	void indivGridStep();
+
+	bool calculateGridStep_multithread();
+	void indivGridStep_multithread(int z, int y, int x, bool & is_tolerance);
+
 
 	struct candidate_cell
 	{
@@ -85,5 +95,7 @@ private:
 	bool reached_edge = false; // todo: shouldnt be global
 
 	int grid_steps_made = 0;
+
+	float tolerance = 0;
 };
 

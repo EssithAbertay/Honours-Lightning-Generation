@@ -5,6 +5,11 @@ LightningGenerator::LightningGenerator()
 
 }
 
+void LightningGenerator::setVars()
+{
+	tolerance = configuration->gradient_tolerance;
+}
+
 void LightningGenerator::regenLightning_multithread()
 {
 
@@ -440,10 +445,7 @@ bool LightningGenerator::calculateGridStep()
 {
 	grid_steps_made++; // todo: do this with config instead!
 
-
 	bool is_within_tolerance = false;
-
-	float tolerance = configuration->gradient_tolerance;
 
 	for (int z = 1; z < configuration->z_size-1; z++)
 	{
@@ -473,5 +475,54 @@ bool LightningGenerator::calculateGridStep()
 	std::swap(potentials, new_potentials);
 
 	return is_within_tolerance;
+}
+
+void LightningGenerator::indivGridStep()
+{
+}
+
+bool LightningGenerator::calculateGridStep_multithread()
+{
+	grid_steps_made++; // todo: do this with config instead!
+
+	bool is_within_tolerance = false;
+
+	for (int z = 1; z < configuration->z_size - 1; z++)
+	{
+		for (int y = 1; y < configuration->y_size - 1; y++)
+		{
+			for (int x = 1; x < configuration->x_size - 1; x++)
+			{
+				indivGridStep_multithread(z, y, x, is_within_tolerance);
+			}
+		}
+	}
+
+
+	std::swap(potentials, new_potentials);
+
+	return is_within_tolerance;
+
+
+	//sycl::buffer<float,3> potentials_buffer(potentials,sycl::range<3>(configuration->z_size,configuration->y_size,configuration->x_size))
+}
+
+void LightningGenerator::indivGridStep_multithread(int z, int y, int x, bool & is_tolerance)
+{
+	if (potentials[z][y][x] == 0 || potentials[z][y][x] == 1) //skip anything with 0 or 1
+	{
+		return;
+	}
+
+	float new_value = calculateLaplace(x, y, z);
+
+	float old_value = potentials[z][y][x];
+
+	new_potentials[z][y][x] = new_value;
+
+	if (abs(old_value - new_value) >= tolerance)
+	{
+		is_tolerance = true;
+	}
 }
 
