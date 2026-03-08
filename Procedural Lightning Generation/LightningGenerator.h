@@ -22,8 +22,6 @@ public:
 
 	void regenLightning_unoptimised();
 	void regenLightning_optimised();
-	void regenLightning_multithread();
-	void regenLightning_other();
 
 	void setConfig(Config* config)
 	{
@@ -87,12 +85,6 @@ private:
 	std::mt19937 gen{ std::random_device{}() };
 
 	std::vector<LightningCell> lightning_points;
-
-	std::vector<std::vector<std::vector<float>>> potentials;
-	
-	std::vector<std::vector<std::vector<float>>> new_potentials;
-
-	std::vector<std::vector<std::vector<int>>> starting;
 
 	std::vector<candidate_cell> candidates;
 

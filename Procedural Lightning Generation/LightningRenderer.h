@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "raylib.h"
+#include "raymath.h"
 
 #include "LightningCell.h"
 #include "Config.h"

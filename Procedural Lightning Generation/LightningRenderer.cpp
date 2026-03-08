@@ -4,11 +4,8 @@
 
 void LightningRenderer::render()
 {	
-	
-	//if (segment_size * std::max(y_size, std::max(x_size,z_size)) > 50)
-	//{
-		segment_size = (GetScreenHeight()/9) / std::max(y_size, std::max(x_size, z_size));
-	//}
+	segment_size = (GetScreenHeight()/9) / std::max(y_size, std::max(x_size, z_size));
+
 	int y_offset = segment_size;
 
 	Vector3 position = { float(configuration->x_size * segment_size), (configuration->y_size + (configuration->y_size / 2)) * segment_size / 2,  -float(std::max(y_size, std::max(x_size, z_size)) * segment_size - (segment_size * 3)) };
@@ -23,18 +20,37 @@ void LightningRenderer::render()
 	z_size = configuration->z_size;	
 	
 
-	
-	
-
 
 	// keep the camera always looking at the centre of the structure
 
 	Vector3 centre = { float(x_size * segment_size / 2), float(y_size * segment_size / 2),  float(z_size * segment_size / 2) };
 	camera->target = centre;
 
-	UpdateCamera(camera, CAMERA_ORBITAL);
+	float radius;
+	float angle;
 
-	
+	switch (configuration->cam_method)
+	{
+	case rotating:
+		UpdateCamera(camera, CAMERA_ORBITAL);
+		break;
+	case control:
+		radius = Vector3Distance(position, centre);
+		angle = configuration->cam_angle * DEG2RAD;
+
+		camera->position.x = centre.x + cosf(angle) * radius;
+		camera->position.z = centre.z + sinf(angle) * radius;
+		camera->position.y = position.y;
+
+		camera->target = centre;
+
+		UpdateCamera(camera, CAMERA_CUSTOM);
+		break;
+	default:
+		break;
+	}
+
+
 
 
 

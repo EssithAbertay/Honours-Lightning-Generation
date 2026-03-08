@@ -1,12 +1,10 @@
 #pragma once
 #include <vector>
 
-enum GENERATION_METHOD
+enum CAMERA_METHOD
 {
-	unoptimised,
-	optimised,
-	multithread,
-	other,
+	rotating,
+	control,
 };
 
 struct SavedGeneration
@@ -18,7 +16,7 @@ struct SavedGeneration
 	bool candidates_from_air;
 
 
-	GENERATION_METHOD method_used;
+	// todo: save all the config info!
 };
 
 struct Config
@@ -40,6 +38,7 @@ public:
 	float gradient_tolerance = 0.005;
 
 	int max_laplace_loops = 50;
+	bool use_calculated_loops = true;
 
 	int eta = 1;
 
@@ -47,8 +46,8 @@ public:
 
 	bool is_regenerate_this_frame = false;
 
-	GENERATION_METHOD method = optimised;
-	
+	bool is_multithread = false;
+
 	bool is_perform_test = false;
 
 	int dimension_increment = 5;
@@ -70,5 +69,9 @@ public:
 	// storing generation data
 
 	std::vector<SavedGeneration> saved_info;
+
+	// display method
+	CAMERA_METHOD cam_method = rotating;
+	int cam_angle = 0;
 };
 

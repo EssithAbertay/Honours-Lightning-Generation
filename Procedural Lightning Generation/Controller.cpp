@@ -12,61 +12,94 @@ void Controller::render(Config & configuration)
 	ImPlot3D::CreateContext();
 
 	ImGui::Begin("Controls", NULL);
-	    ImGui::SliderInt("X Size", &configuration.x_size, 5, 100);
-	    ImGui::SliderInt("Y Size", &configuration.y_size, 5, 100);
-	    ImGui::SliderInt("Z Size", &configuration.z_size, 5, 100);
 
-		ImGui::Checkbox("Force 1:2:1 Volume ratio", &configuration.force_ratio);
-
-		if (configuration.force_ratio)
+		if (ImGui::TreeNode("Camera"))
 		{
-			int new_size = std::max(configuration.y_size / 2, 5);
-			configuration.x_size = new_size;
-			configuration.z_size = new_size;
+			static int method_val = 0;
+
+			ImGui::RadioButton("Rotating", &method_val, 0);
+			ImGui::SameLine();
+			ImGui::RadioButton("Free", &method_val, 1);
+
+			configuration.cam_method = static_cast<CAMERA_METHOD>(method_val);
+
+			if (method_val == 1)
+			{
+				ImGui::SliderInt("Camera Angle", &configuration.cam_angle, 0, 360);
+			}
+
+			ImGui::Checkbox("Display Bounding Box", &configuration.is_bounding_box);
+			ImGui::TreePop();
 		}
 
-		ImGui::Checkbox("Reset volume between steps", &configuration.reset_vol_between_steps);
-
-		static int candidate_selection = 0;
-
-		ImGui::Text("Select candidates cells from:");
-		ImGui::RadioButton("Air cells", &candidate_selection, 0);
-		ImGui::SameLine();
-		ImGui::RadioButton("Lightning cells", &candidate_selection, 1);
-
-		// could just be a 0/1 true/false, but switch allows for potential future options
-		switch (candidate_selection) 
+		if (ImGui::TreeNode("Volume Controls"))
 		{
-		case 0:
-			configuration.candidates_from_air = true;
-			break;
-		case 1:
-			configuration.candidates_from_air = false;
-			break;
-		default:
-			break;
+			ImGui::SliderInt("X Size", &configuration.x_size, 5, 100);
+			ImGui::SliderInt("Y Size", &configuration.y_size, 5, 100);
+			ImGui::SliderInt("Z Size", &configuration.z_size, 5, 100);
+
+			ImGui::Checkbox("Force 1:2:1 Volume ratio", &configuration.force_ratio);	
+			
+			if (configuration.force_ratio)
+			{
+				int new_size = std::max(configuration.y_size / 2, 5);
+				configuration.x_size = new_size;
+				configuration.z_size = new_size;
+			}
+
+			ImGui::TreePop();
 		}
 
+		if (ImGui::TreeNode("Generation Controls"))
+		{	
+			ImGui::SeparatorText("General");
 
-	    ImGui::SliderInt("Eta", &configuration.eta, 1, 10);
+			ImGui::SliderInt("Eta", &configuration.eta, 1, 10);	
 
-		ImGui::SliderFloat("Gradient Tolerance", &configuration.gradient_tolerance, 0, 1, "%.3f");
+			ImGui::SeparatorText("Optimisations");
 
-		ImGui::Checkbox("Bounding Box", &configuration.is_bounding_box);
+			ImGui::Checkbox("Reset volume between steps", &configuration.reset_vol_between_steps);
 
-		static int method_val = 0;
+			static int candidate_selection = 0;
 
-		ImGui::RadioButton("Unoptimised", &method_val, 0);
-		ImGui::SameLine();
-		ImGui::RadioButton("Optimised", &method_val, 1);
-		ImGui::SameLine();
-		ImGui::RadioButton("Multithreaded + Optimised", &method_val, 2);
-		ImGui::SameLine();
-		ImGui::RadioButton("Other", &method_val, 3);
+			ImGui::Text("Select candidate cells from:");
+			ImGui::RadioButton("Air cells", &candidate_selection, 0);
+			ImGui::SameLine();
+			ImGui::RadioButton("Lightning cells", &candidate_selection, 1);
 
+			// could just be a 0/1 true/false, but switch allows for potential future options
+			switch (candidate_selection)
+			{
+			case 0:
+				configuration.candidates_from_air = true;
+				break;
+			case 1:
+				configuration.candidates_from_air = false;
+				break;
+			default:
+				break;
+			}
 
-		configuration.method = static_cast<GENERATION_METHOD>(method_val);
+			ImGui::Checkbox("Multithread", &configuration.is_multithread);
 
+			if (ImGui::TreeNode("Gradient Calculation"))
+			{
+				ImGui::SliderFloat("Tolerance", &configuration.gradient_tolerance, 0, 1, "%.3f");
+
+				ImGui::Checkbox("Use cacluated max loops", &configuration.use_calculated_loops);
+
+				if (configuration.use_calculated_loops)
+				{
+					ImGui::SliderInt("Max Loops", &configuration.max_laplace_loops, 1, 100);
+				}
+			
+				ImGui::TreePop();
+			}
+		
+			ImGui::TreePop();
+		}
+		
+	
 
 
 
@@ -142,7 +175,7 @@ void Controller::render(Config & configuration)
 
 		for (auto x : configuration.saved_info) // todo: write data to file
 		{
-			data_file << "Size: " << x.x_size << "," << x.y_size << "," << x.z_size << " Eta:" << std::fixed << x.eta << " Method: " << std::fixed << MethodToString(x.method_used) << " Time:" << std::fixed << x.time << "ms" << " Grid Steps:" << std::fixed << x.grid_steps << "\n";
+			data_file << "Size: " << x.x_size << "," << x.y_size << "," << x.z_size << " Eta:" << std::fixed << x.eta << " Time:" << std::fixed << x.time << "ms" << " Grid Steps:" << std::fixed << x.grid_steps << "\n";
 		}
 
 		data_file.close();
@@ -155,7 +188,6 @@ void Controller::render(Config & configuration)
 	{
 		ImGui::TableSetupColumn("Size");
 		ImGui::TableSetupColumn("Eta");
-		ImGui::TableSetupColumn("Method");
 		ImGui::TableSetupColumn("Time (ms)");
 		ImGui::TableSetupColumn("Grid Steps");
 		ImGui::TableSetupColumn("Cell Selection");
@@ -175,13 +207,10 @@ void Controller::render(Config & configuration)
 				ImGui::TableSetColumnIndex(1);
 				ImGui::Text("%d",x.eta);
 				ImGui::TableSetColumnIndex(2);
-				ImGui::Text("%s", MethodToString(x.method_used));
-				ImGui::TableSetColumnIndex(3);
 				ImGui::Text(" %.0f", x.time);
-				ImGui::TableSetColumnIndex(4);
+				ImGui::TableSetColumnIndex(3);
 				ImGui::Text("%d",x.grid_steps);
-
-				ImGui::TableSetColumnIndex(5);
+				ImGui::TableSetColumnIndex(4);
 				ImGui::Text("%s", CandidateSelectionToString(x.candidates_from_air));
 			
 		}
@@ -197,17 +226,6 @@ void Controller::render(Config & configuration)
     rlImGuiEnd();
 }
 
-const char* Controller::MethodToString(GENERATION_METHOD m)
-{
-	switch (m)
-	{
-	case GENERATION_METHOD::unoptimised:    return "Unoptimised";
-	case GENERATION_METHOD::optimised:		return "Optimised";
-	case GENERATION_METHOD::multithread:    return "Multithreaded";
-	case GENERATION_METHOD::other:			return "Other";
-	default:								return "Unknown";
-	}
-}
 
 const char* Controller::CandidateSelectionToString(bool candidates_from)
 {

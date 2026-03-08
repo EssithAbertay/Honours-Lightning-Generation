@@ -10,29 +10,21 @@ void LightningGenerator::setVars()
 	tolerance = configuration->gradient_tolerance;
 }
 
-void LightningGenerator::regenLightning_multithread()
-{
-
-}
-
-void LightningGenerator::regenLightning_other()
-{
-
-
-}
-
 void LightningGenerator::regenLightning_optimised()
 {
 	grid_steps_made = 0;
 
 	initialiseGrid();
 
-	// need to set an initial lightning spot for the optimised version
-	int starting_x = configuration->x_size / 2;
-	int starting_z = configuration->z_size / 2;
-	LightningCell intialCharge = LightningCell(starting_x, 0, starting_z, starting_x, 0, starting_z);
+	// need to set an initial lightning point when checking candidates against lightning cells
+	if(!configuration->candidates_from_air)
+	{
+		int starting_x = configuration->x_size / 2;
+		int starting_z = configuration->z_size / 2;
+		LightningCell intialCharge = LightningCell(starting_x, 0, starting_z, starting_x, 0, starting_z);
 
-	lightning_points.push_back(intialCharge);
+		lightning_points.push_back(intialCharge);
+	}
 
 	while (!reached_edge)
 	{
@@ -77,13 +69,19 @@ void LightningGenerator::performLightningStep_optimised()
 
 	if (!configuration->candidates_from_air)
 	{
-		collectCandidates_optimised(); // todo: fix bug in here
+		collectCandidates_optimised();
 	}
 	else
 	{
 		collectCandidates();
 	}
+
 	selectLightningCell();
+
+	if (configuration->reset_vol_between_steps)
+	{
+		resetPotentialGrid();
+	}
 }
 
 void LightningGenerator::performLightningStep()
@@ -111,50 +109,36 @@ void LightningGenerator::performLightningStep()
 
 void LightningGenerator::createStartingGrid()
 {
-	starting.clear();
-	
 	for (int z = 0; z < configuration->z_size; z++)
 	{
-		std::vector<std::vector<int>> face;
-
 		for (int y = 0; y < configuration->y_size; y++)
 		{
-			std::vector<int> row;
-
 			for (int x = 0; x < configuration->x_size; x++)
 			{
+				int idx = index(x, y, z); // reduction of calls
+
 				if (y == 0) //check for ceiling
 				{
-					row.push_back(3);
-					starting_flat[index(x, y, z)] = 3;
+					starting_flat[idx] = 3;
 				}
 				else if (y == configuration->y_size - 1) // check for ground
 				{
-					row.push_back(1);
-					starting_flat[index(x, y, z)] = 1;
+					starting_flat[idx] = 1;
 				}
 				else if (x == 0 || x == configuration->x_size - 1 || z == 0 || z == configuration->z_size - 1) // check for walls
 				{
-					row.push_back(3);
-					starting_flat[index(x, y, z)] = 3;
+					starting_flat[idx] = 3;
 				}
 				else // air
 				{
-					row.push_back(0);
-					starting_flat[index(x, y, z)] = 0;
+					starting_flat[idx] = 0;
 				}
 			}
-
-			face.push_back(row);
 		}
-
-		starting.push_back(face);
 	}
 
 	int starting_x = configuration->x_size / 2;
 	int starting_z = configuration->z_size / 2;
-
-	starting[starting_z][0][starting_x] = 2;
 
 	starting_flat[index(starting_x, 0, starting_z)] = 2;
 }
@@ -167,65 +151,48 @@ void LightningGenerator::initialiseGrid()
 	new_potentials_flat.clear();
 	starting_flat.clear();
 
-
 	potentials_flat.resize(total);
 	new_potentials_flat.resize(total);
 	starting_flat.resize(total);
 
 	lightning_points.clear();
-	potentials.clear();
-	new_potentials.clear();
 
 	MAX_GRADIENT_LAPLACE_LOOPS = std::max(configuration->y_size * 1.5 + 20, double(50)); // todo: take a look at this?
 	reached_edge = false;
-
 
 	createStartingGrid();
 
 	for (int z = 0; z < configuration->z_size; z++)
 	{
-		std::vector<std::vector<float>> face;
-
 		for (int y = 0; y < configuration->y_size; y++)
 		{
-			std::vector<float> row;
-
 			for (int x = 0; x < configuration->x_size; x++)
 			{
+				int idx = index(x, y, z); // reduction of calls
+
 				if (y == 0) //check for ceiling
 				{
-					row.push_back(0);
-					potentials_flat[index(x, y, z)] = 0;
-					new_potentials_flat[index(x, y, z)] = 0;
+					potentials_flat[idx] = 0;
+					new_potentials_flat[idx] = 0;
 				}
 				else if (y == configuration->y_size - 1) // check for ground
 				{
-					row.push_back(1);
-					potentials_flat[index(x, y, z)] = 1;
-					new_potentials_flat[index(x, y, z)] = 1;
+					potentials_flat[idx] = 1;
+					new_potentials_flat[idx] = 1;
 				}
 				else if (x == 0 || x == configuration->x_size - 1 || z == 0 || z == configuration->z_size - 1) // check for walls
 				{
-					row.push_back(0);
-					potentials_flat[index(x, y, z)] = 0;
-					new_potentials_flat[index(x, y, z)] = 0;
+					potentials_flat[idx] = 0;
+					new_potentials_flat[idx] = 0;
 				}
 				else // air
 				{
-					row.push_back(0.5);
-					potentials_flat[index(x, y, z)] = 0.5;
-					new_potentials_flat[index(x, y, z)] = 0.5;
+					potentials_flat[idx] = 0.5;
+					new_potentials_flat[idx] = 0.5;
 				}
 			}
-
-			face.push_back(row);
 		}
-
-		potentials.push_back(face);
-		new_potentials.push_back(face);
 	}
-
-	starting_flat;
 }
 
 void LightningGenerator::checkCandidacy(int x_pos, int y_pos, int z_pos)
@@ -248,17 +215,10 @@ void LightningGenerator::checkCandidacy(int x_pos, int y_pos, int z_pos)
 				if (x_pos + x < 0) continue; //temp fix // why is this here?????
 				if (z_pos + z < 0) continue; //temp fix // why is this here?????
 
-				//if (starting[z_pos + z][y_pos + y][x_pos + x] == 3) continue; //skip boundaries 
 				if (starting_flat[index(x_pos + x, y_pos + y, z_pos + z)] == 3) continue; //skip boundaries 
 
-				std::cout << x_pos + x << y_pos + y << z_pos + z << std::endl;
-
-
-				//if (potentials[z_pos + z][y_pos + y][x_pos + x] == 0) // if a surrounding cell is lightning then this is a candidate
 				if (potentials_flat[index(x_pos + x,y_pos + y,z_pos + z)] == 0 ) // if a surrounding cell is lightning then this is a candidate
 				{
-
-					//if (starting[z_pos + z][y_pos + y][x_pos + x] == 1) // check if candidate ground is next to lightning
 					if (starting_flat[index(x_pos + x, y_pos + y, z_pos + z)] == 1) // check if candidate ground is next to lightning
 					{
 						is_ground_candidate_found = true;
@@ -266,8 +226,6 @@ void LightningGenerator::checkCandidacy(int x_pos, int y_pos, int z_pos)
 					}
 
 					candidate_cell temp;
-
-					//temp.potential = potentials[z_pos][y_pos][x_pos];
 
 					temp.potential = potentials_flat[index(x_pos,y_pos,z_pos)];
 					temp.x = x_pos;
@@ -318,8 +276,6 @@ void LightningGenerator::collectCandidates()
 void LightningGenerator::collectCandidates_optimised()
 {
 	//instead of going through every air cell, we will go through each lightning cell and check them instead
-	// todo: currently can get duplicate candidates, create a second check candidacy function
-
 	visited_lightning.clear();
 
 	candidates.clear();
@@ -470,13 +426,6 @@ void LightningGenerator::resetPotentialGrid()
 
 float LightningGenerator::calculateLaplace(int x_pos, int y_pos, int z_pos)
 {
-	//float left = potentials[z_pos][y_pos - 1][x_pos];
-	//float right = potentials[z_pos][y_pos + 1][x_pos];
-	//float forward = potentials[z_pos + 1][y_pos][x_pos];
-	//float backward = potentials[z_pos - 1][y_pos][x_pos];
-	//float up = potentials[z_pos][y_pos][x_pos - 1];
-	//float down = potentials[z_pos][y_pos][x_pos + 1];
-
 	float left = potentials_flat[index(x_pos, y_pos - 1, z_pos)];
 	float right = potentials_flat[index(x_pos, y_pos + 1, z_pos)];
 	float forward = potentials_flat[index(x_pos, y_pos, z_pos + 1)];
@@ -502,22 +451,15 @@ bool LightningGenerator::calculateGridStep()
 		{
 			for (int x = 1; x < configuration->x_size - 1; x++)
 			{
-				//if (potentials[z][y][x] == 0 || potentials[z][y][x] == 1) //skip anything with 0 or 1
 				if (potentials_flat[index(x,y,z)] == 0 || potentials_flat[index(x, y, z)] == 1) //skip anything with 0 or 1
 				{
 					continue;
 				}
 
 				float new_value = calculateLaplace(x, y, z);
-
-				//float old_value = potentials[z][y][x];
-
-				//new_potentials[z][y][x] = new_value;
-
 				float old_value = potentials_flat[index(x, y, z)];
 
 				new_potentials_flat[index(x, y, z)] = new_value;
-
 
 				if (abs(old_value - new_value) >= tolerance)
 				{
@@ -527,7 +469,6 @@ bool LightningGenerator::calculateGridStep()
 		}
 	}
 
-	//std::swap(potentials, new_potentials);
 	std::swap(potentials_flat, new_potentials_flat);
 
 	return is_within_tolerance;
@@ -554,27 +495,25 @@ bool LightningGenerator::calculateGridStep_multithread()
 		}
 	}
 
-
-	std::swap(potentials, new_potentials);
+	std::swap(potentials_flat, new_potentials_flat);
 
 	return is_within_tolerance;
-
 
 	//sycl::buffer<float,3> potentials_buffer(potentials,sycl::range<3>(configuration->z_size,configuration->y_size,configuration->x_size))
 }
 
 void LightningGenerator::indivGridStep_multithread(int z, int y, int x, bool& is_tolerance)
 {
-	if (potentials[z][y][x] == 0 || potentials[z][y][x] == 1) //skip anything with 0 or 1
+	if (potentials_flat[index(x,y,z)] == 0 || potentials_flat[index(x, y, z)] == 1) //skip anything with 0 or 1
 	{
 		return;
 	}
 
 	float new_value = calculateLaplace(x, y, z);
 
-	float old_value = potentials[z][y][x];
+	float old_value = potentials_flat[index(x, y, z)];
 
-	new_potentials[z][y][x] = new_value;
+	new_potentials_flat[index(x, y, z)] = new_value;
 
 	if (abs(old_value - new_value) >= tolerance)
 	{

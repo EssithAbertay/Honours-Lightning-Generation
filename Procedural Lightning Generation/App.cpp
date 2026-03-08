@@ -11,7 +11,7 @@ void App::Run()
 
     lightning.regenLightning();
 
-    camera.position = Vector3({ 20.0f, 20.0f, 20.0f });  // Camera position
+    camera.position = Vector3({ 100.0f, 75.0f, -85.0f });  // Camera position
     camera.target = Vector3({ 0.0f, 0.0f, 0.0f });      // Camera looking at point
     camera.up = Vector3({ 0.0f, 1.0f, 0.0f });          // Camera up vector (rotation towards target)
     camera.fovy = 120.0f; // Camera field-of-view Y
@@ -29,8 +29,6 @@ void App::Run()
 void App::Update()
 {
     std::chrono::milliseconds duration = std::chrono::milliseconds();
-
-
 
     if (lightning_config.is_perform_test) // i still really dont like looping through this many times but what can you do
     {
@@ -97,7 +95,6 @@ void App::Update()
     }
     else if (lightning_config.is_regenerate_this_frame)
     {
-
         auto time_at_start = std::chrono::high_resolution_clock::now();
 
         lightning.regenLightning();
@@ -105,16 +102,17 @@ void App::Update()
         auto time_at_end = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_at_end - time_at_start);
 
-
         SavedGeneration temp;
         temp.x_size = lightning_config.x_size;
         temp.y_size = lightning_config.y_size;
         temp.z_size = lightning_config.z_size;
-        temp.method_used = lightning_config.method;
         temp.eta = lightning_config.eta;
         temp.time = duration.count();
         temp.grid_steps = lightning_config.grid_steps;
         temp.candidates_from_air = lightning_config.candidates_from_air;
+
+        // todo: add the optimisations and if enabled!
+
         lightning_config.saved_info.push_back(temp);
 
         std::cout << "Time Taken: " << duration.count() <<"ms" << std::endl;
