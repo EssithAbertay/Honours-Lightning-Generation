@@ -72,6 +72,7 @@ void LightningGenerator::performLightningStep_optimised()
 		{
 			is_within_tolerance = false;
 		}
+
 	}
 
 	if (!configuration->candidates_from_air)
@@ -175,7 +176,7 @@ void LightningGenerator::initialiseGrid()
 	potentials.clear();
 	new_potentials.clear();
 
-	MAX_GRADIENT_LAPLACE_LOOPS = std::max(configuration->x_size * 1.5 + 20, double(30)); // todo: take a look at this?
+	MAX_GRADIENT_LAPLACE_LOOPS = std::max(configuration->y_size * 1.5 + 20, double(50)); // todo: take a look at this?
 	reached_edge = false;
 
 
@@ -250,8 +251,11 @@ void LightningGenerator::checkCandidacy(int x_pos, int y_pos, int z_pos)
 				//if (starting[z_pos + z][y_pos + y][x_pos + x] == 3) continue; //skip boundaries 
 				if (starting_flat[index(x_pos + x, y_pos + y, z_pos + z)] == 3) continue; //skip boundaries 
 
+				std::cout << x_pos + x << y_pos + y << z_pos + z << std::endl;
+
+
 				//if (potentials[z_pos + z][y_pos + y][x_pos + x] == 0) // if a surrounding cell is lightning then this is a candidate
-				if (potentials_flat[index(x_pos + x,y_pos + y,z_pos + z)] == 0) // if a surrounding cell is lightning then this is a candidate
+				if (potentials_flat[index(x_pos + x,y_pos + y,z_pos + z)] == 0 ) // if a surrounding cell is lightning then this is a candidate
 				{
 
 					//if (starting[z_pos + z][y_pos + y][x_pos + x] == 1) // check if candidate ground is next to lightning
@@ -284,12 +288,6 @@ void LightningGenerator::checkCandidacy(int x_pos, int y_pos, int z_pos)
 					candidates.push_back(temp);
 
 					x = 2; y = 2; z = 2; // skip out the check cause we knw it's a candidate // why not just use a break? or similar?
-
-
-
-
-
-
 				}
 			}
 		}
@@ -309,7 +307,7 @@ void LightningGenerator::collectCandidates()
 				//if (potentials[z][y][x] == 0) //skip current lightning cells or boundaries
 				if (potentials_flat[index(x,y,z)] == 0) //skip current lightning cells or boundaries
 				{
-					continue;
+					continue;  
 				}
 				checkCandidacy(x, y, z);
 			}
@@ -321,6 +319,8 @@ void LightningGenerator::collectCandidates_optimised()
 {
 	//instead of going through every air cell, we will go through each lightning cell and check them instead
 	// todo: currently can get duplicate candidates, create a second check candidacy function
+
+	visited_lightning.clear();
 
 	candidates.clear();
 	bool is_ground_candidate_found = false;
@@ -336,23 +336,28 @@ void LightningGenerator::collectCandidates_optimised()
 
 					if (x == 0 && y == 0 && z == 0) continue;// skip self
 					if (point.x + x >= configuration->x_size || point.y + y >= configuration->y_size || point.z + z >= configuration->z_size || point.x + x < 0 || point.y + y < 0 || point.z + z < 0) continue;  // if checking cells that are out of bounds skip
-					if (potentials[point.z + z][point.y + y][point.x + x] == 0) continue;//skip other lightning cells or boundaries
+					//if (potentials[point.z + z][point.y + y][point.x + x] == 0) continue;//skip other lightning cells or boundaries
+					if (potentials_flat[index(point.x + x,point.y + y,point.z + z)] == 0) continue;//skip other lightning cells or boundaries
 
 					// as we've skipped everything else, this cell must be air or ground
 
 					// if it's ground we want to only select it
 
-					if (starting[point.z + z][point.y + y][point.x + x] == 1) // check if candidate ground is next to lightning
+					//if (starting[point.z + z][point.y + y][point.x + x] == 1) // check if candidate ground is next to lightning
+					if (starting_flat[index(point.x + x, point.y + y, point.z + z)] == 1) // check if candidate ground is next to lightning
 					{
 						is_ground_candidate_found = true;
 						reached_edge = true;
+
+						std::cout << "found ground" << std::endl;
 					}
 
 					//  define this as a candidate
 
 					candidate_cell temp;
 
-					temp.potential = potentials[point.z + z][point.y + y][point.x + x];
+					//temp.potential = potentials[point.z + z][point.y + y][point.x + x];
+					temp.potential = potentials_flat[index(point.x + x,point.y + y,point.z + z)];
 					temp.x = point.x + x;
 					temp.y = point.y + y;
 					temp.z = point.z + z;
@@ -360,15 +365,19 @@ void LightningGenerator::collectCandidates_optimised()
 					// check if this candidate already exists, so that we dont duplicate candidates
 
 					bool duplicate = false;
-					for (auto x : candidates) // dont like doing it like this, should use a map/set instead
-					{
-						if (temp == x)
-						{
-							duplicate = true;
-							break;
-						}
-					}
 
+					duplicate = visited_lightning.contains(index(temp.x, temp.y, temp.z));
+					
+
+					//for (auto& x : candidates) // dont like doing it like this, should use a map/set instead
+					//{
+					//	if (temp == x)
+					//	{
+					//		duplicate = true;
+					//		break;
+					//	}
+					//}
+					
 					if (duplicate)
 					{
 						continue;
@@ -387,6 +396,8 @@ void LightningGenerator::collectCandidates_optimised()
 						break;
 					}
 
+
+					visited_lightning.insert(index(temp.x, temp.y, temp.z));
 					candidates.push_back(temp);
 				}
 			}
@@ -396,8 +407,6 @@ void LightningGenerator::collectCandidates_optimised()
 
 void LightningGenerator::selectLightningCell()
 {
-
-
 	// formula for probability
 	// https://onlinelibrary.wiley.com/cms/asset/6dcd580c-06ae-421c-acf7-f5449d06a5e4/cav1760-math-0002.png
 
@@ -431,8 +440,11 @@ void LightningGenerator::selectLightningCell()
 
 	lightning_points.push_back(LightningCell(chosen.x, chosen.y, chosen.z, chosen.parent_x, chosen.parent_y, chosen.parent_z));
 
-	potentials[chosen.z][chosen.y][chosen.x] = 0;
-	new_potentials[chosen.z][chosen.y][chosen.x] = 0;
+	potentials_flat[index(chosen.x, chosen.y, chosen.z)] = 0;
+	new_potentials_flat[index(chosen.x, chosen.y, chosen.z)] = 0;
+
+	//potentials[chosen.z][chosen.y][chosen.x] = 0;
+	//new_potentials[chosen.z][chosen.y][chosen.x] = 0;
 }
 
 void LightningGenerator::resetPotentialGrid()

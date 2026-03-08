@@ -82,12 +82,14 @@ private:
 	std::vector<float> new_potentials_flat;
 	std::vector<float> starting_flat;
 
+	std::unordered_set<int> visited_lightning;
+
 	std::mt19937 gen{ std::random_device{}() };
 
 	std::vector<LightningCell> lightning_points;
 
 	std::vector<std::vector<std::vector<float>>> potentials;
-
+	
 	std::vector<std::vector<std::vector<float>>> new_potentials;
 
 	std::vector<std::vector<std::vector<int>>> starting;
@@ -96,7 +98,6 @@ private:
 
 	Config * configuration = nullptr;
 
-	const int LIGHTNING_STEPS = 30;
 	int MAX_GRADIENT_LAPLACE_LOOPS = 50; // todo: shouldnt be all caps
 
 	bool reached_edge = false; // todo: shouldnt be global

@@ -35,9 +35,11 @@ public:
 	bool reset_vol_between_steps = true;
 
 	// if true, select candidates from air cells, if false select from lightning cells, bad name, is unclear
-	bool candidates_from_air = true; 
+	bool candidates_from_air = false; 
 
 	float gradient_tolerance = 0.005;
+
+	int max_laplace_loops = 50;
 
 	int eta = 1;
 
@@ -45,7 +47,7 @@ public:
 
 	bool is_regenerate_this_frame = false;
 
-	GENERATION_METHOD method = unoptimised;
+	GENERATION_METHOD method = optimised;
 	
 	bool is_perform_test = false;
 
