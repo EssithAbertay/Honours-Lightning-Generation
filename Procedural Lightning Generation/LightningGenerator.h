@@ -73,7 +73,14 @@ private:
 		}
 	};
 
+	inline int index(int x, int y, int z)
+	{
+		return x + (y * configuration->x_size) + z * configuration->x_size * configuration->y_size;
+	}
 
+	std::vector<float> potentials_flat;
+	std::vector<float> new_potentials_flat;
+	std::vector<float> starting_flat;
 
 	std::mt19937 gen{ std::random_device{}() };
 
