@@ -27,6 +27,8 @@ public:
 	void render(Config & configuration);
 
 private:
+	Config config_defaults;
+
 	const char* CandidateSelectionToString(bool candidate_selection);
 };
 

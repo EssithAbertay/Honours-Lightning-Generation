@@ -14,7 +14,11 @@ struct SavedGeneration
 	int eta;
 	int grid_steps;
 	bool candidates_from_air;
-
+	bool multithreading_enabled;
+	bool resetting_volume;
+	float gradient_tolerance;
+	bool loop_cap_enabled;
+	int max_loops;
 
 	// todo: save all the config info!
 };
@@ -34,11 +38,15 @@ public:
 
 	// if true, select candidates from air cells, if false select from lightning cells, bad name, is unclear
 	bool candidates_from_air = false; 
+	int candidate_selection = 0; // 0 for air, 1 for lightning
+
 
 	float gradient_tolerance = 0.005;
 
+	bool use_loop_cap = true;
 	int max_laplace_loops = 50;
 	bool use_calculated_loops = true;
+	float loop_multiplier = 1.5;
 
 	int eta = 1;
 

@@ -110,8 +110,12 @@ void App::Update()
         temp.time = duration.count();
         temp.grid_steps = lightning_config.grid_steps;
         temp.candidates_from_air = lightning_config.candidates_from_air;
+        temp.multithreading_enabled = lightning_config.is_multithread;
+        temp.resetting_volume = lightning_config.reset_vol_between_steps;
+        temp.gradient_tolerance = lightning_config.gradient_tolerance;
+        temp.loop_cap_enabled = lightning_config.use_loop_cap;
+        temp.max_loops = lightning_config.max_laplace_loops;
 
-        // todo: add the optimisations and if enabled!
 
         lightning_config.saved_info.push_back(temp);
 

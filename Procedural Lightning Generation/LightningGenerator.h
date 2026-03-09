@@ -90,7 +90,7 @@ private:
 
 	Config * configuration = nullptr;
 
-	int MAX_GRADIENT_LAPLACE_LOOPS = 50; // todo: shouldnt be all caps
+	int max_laplace_loops = 50;
 
 	bool reached_edge = false; // todo: shouldnt be global
 

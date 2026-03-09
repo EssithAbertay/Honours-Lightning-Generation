@@ -13,7 +13,7 @@ void Controller::render(Config & configuration)
 
 	ImGui::Begin("Controls", NULL);
 
-		if (ImGui::TreeNode("Camera"))
+		if (ImGui::TreeNode("Camera Controls"))
 		{
 			static int method_val = 0;
 
@@ -56,19 +56,83 @@ void Controller::render(Config & configuration)
 
 			ImGui::SliderInt("Eta", &configuration.eta, 1, 10);	
 
+			ImGui::Text("Starting Charges - In Progress");
+
+		/*	std::vector<int> starting_charges;
+			starting_charges.resize(configuration.x_size * configuration.z_size);
+
+			const float size = 3;
+			for (int y = 0; y < configuration.z_size; y++)
+			{
+				for (int x = 0; x < configuration.x_size; x++)
+				{
+					if (x > 0)
+						ImGui::SameLine();
+					ImGui::PushID(y * configuration.z_size + x);
+					if (ImGui::Selectable("", starting_charges[y * configuration.z_size + x] != 0, 0, ImVec2(size, size)))
+					{
+						starting_charges[y * configuration.z_size + x] ^= 1;
+					}
+					ImGui::PopID();
+				}
+			}*/
+
+			static std::vector<int> starting_charges;
+			starting_charges.resize(configuration.x_size * configuration.z_size);
+
+			const float size = 5.0f;
+
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+
+			for (int y = 0; y < configuration.z_size; y++)
+			{
+				for (int x = 0; x < configuration.x_size; x++)
+				{
+					if (x > 0)
+						ImGui::SameLine();
+
+					int index = y * configuration.x_size + x;
+					bool selected = starting_charges[index] != 0;
+
+					ImGui::PushID(index);
+
+					if (selected)
+					{
+						ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(1.0f, 0.9f, 0.2f, 1.0f)); // yellow
+						ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(1.0f, 0.95f, 0.4f, 1.0f));
+						ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(1.0f, 0.8f, 0.1f, 1.0f));
+					}
+					else
+					{
+						ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.4f, 0.4f, 0.4f, 1.0f)); // grey
+						ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.55f, 0.55f, 0.55f, 1.0f));
+						ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.65f, 0.65f, 0.65f, 1.0f));
+					}
+
+					if (ImGui::Selectable("", selected, 0, ImVec2(size, size)))
+					{
+						starting_charges[index] ^= 1;
+					}
+
+					ImGui::PopStyleColor(3);
+					ImGui::PopID();
+				}
+			}
+
+			ImGui::PopStyleVar();
+
 			ImGui::SeparatorText("Optimisations");
 
 			ImGui::Checkbox("Reset volume between steps", &configuration.reset_vol_between_steps);
 
-			static int candidate_selection = 0;
-
+	
 			ImGui::Text("Select candidate cells from:");
-			ImGui::RadioButton("Air cells", &candidate_selection, 0);
+			ImGui::RadioButton("Air cells", &configuration.candidate_selection, 0);
 			ImGui::SameLine();
-			ImGui::RadioButton("Lightning cells", &candidate_selection, 1);
+			ImGui::RadioButton("Lightning cells", &configuration.candidate_selection, 1);
 
-			// could just be a 0/1 true/false, but switch allows for potential future options
-			switch (candidate_selection)
+			// todo: could just be a 0/1 true/false, but switch allows for potential future options
+			switch (configuration.candidate_selection)
 			{
 			case 0:
 				configuration.candidates_from_air = true;
@@ -86,26 +150,38 @@ void Controller::render(Config & configuration)
 			{
 				ImGui::SliderFloat("Tolerance", &configuration.gradient_tolerance, 0, 1, "%.3f");
 
-				ImGui::Checkbox("Use cacluated max loops", &configuration.use_calculated_loops);
+				ImGui::Checkbox("Use loop cap", &configuration.use_loop_cap);
 
-				if (configuration.use_calculated_loops)
+				if (configuration.use_loop_cap)
 				{
-					ImGui::SliderInt("Max Loops", &configuration.max_laplace_loops, 1, 100);
+					ImGui::Checkbox("Use max loop calculation", &configuration.use_calculated_loops);
+
+					if (configuration.use_calculated_loops)
+					{
+						ImGui::Text("Max loops is calculated as (y_size * x) where x is the multiplier value");
+						ImGui::SliderFloat("Loop Multiplier", &configuration.loop_multiplier, 0.1f, 3, "%.1f");
+					}
+					else
+					{
+						ImGui::InputInt("Max Loops", &configuration.max_laplace_loops);
+					}
 				}
-			
+
 				ImGui::TreePop();
 			}
 		
 			ImGui::TreePop();
 		}
 		
-	
-
-
 
 		if (ImGui::Button("Regenerate Lightning"))
 		{
 			configuration.is_regenerate_this_frame = true;
+		}
+
+		if (ImGui::Button("Restore Defaults"))
+		{
+			configuration = config_defaults; // todo: bug where defaults only reset when trees are open
 		}
 
 	ImGui::End();
@@ -184,14 +260,19 @@ void Controller::render(Config & configuration)
 	// display generation parameters and results, time, sizes, eta, methods etc, maybe store all previously generated structures as well,  have them viewable? 
 
 
-	if (ImGui::BeginTable("Generation Info", 6))
+	if (ImGui::BeginTable("Generation Info", 10))
 	{
 		ImGui::TableSetupColumn("Size");
 		ImGui::TableSetupColumn("Eta");
 		ImGui::TableSetupColumn("Time (ms)");
 		ImGui::TableSetupColumn("Grid Steps");
-		ImGui::TableSetupColumn("Cell Selection");
-
+		ImGui::TableSetupColumn("Cell Selection");	
+		ImGui::TableSetupColumn("Multithreading Enabled");
+		ImGui::TableSetupColumn("Resetting Volume");
+		ImGui::TableSetupColumn("Gradient Tolerance");
+		ImGui::TableSetupColumn("Using Loop Cap");
+		ImGui::TableSetupColumn("Max Loops");
+	
 		ImGui::TableHeadersRow();
 
 
@@ -212,7 +293,16 @@ void Controller::render(Config & configuration)
 				ImGui::Text("%d",x.grid_steps);
 				ImGui::TableSetColumnIndex(4);
 				ImGui::Text("%s", CandidateSelectionToString(x.candidates_from_air));
-			
+				ImGui::TableSetColumnIndex(5);
+				ImGui::Text("%s", x.multithreading_enabled ? "True" : "False");
+				ImGui::TableSetColumnIndex(6);
+				ImGui::Text("%s", x.resetting_volume ? "True" : "False");
+				ImGui::TableSetColumnIndex(7);
+				ImGui::Text("%.1f", x.gradient_tolerance);
+				ImGui::TableSetColumnIndex(8);
+				ImGui::Text("%s",  x.loop_cap_enabled ? "True" : "False");
+				ImGui::TableSetColumnIndex(9);
+				ImGui::Text("%d", x.max_loops);
 		}
 		ImGui::EndTable();
 	}

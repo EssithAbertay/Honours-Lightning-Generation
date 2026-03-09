@@ -8,6 +8,17 @@ LightningGenerator::LightningGenerator()
 void LightningGenerator::setVars()
 {
 	tolerance = configuration->gradient_tolerance;
+
+	if (configuration->use_calculated_loops)
+	{
+		max_laplace_loops = configuration->y_size * configuration->loop_multiplier;
+
+		configuration->max_laplace_loops = max_laplace_loops; // set this so that it saves the data correctly
+	}
+	else
+	{
+		max_laplace_loops = configuration->max_laplace_loops;
+	}
 }
 
 void LightningGenerator::regenLightning_optimised()
@@ -60,7 +71,7 @@ void LightningGenerator::performLightningStep_optimised()
 		is_within_tolerance = calculateGridStep();
 		loops++;
 
-		if (loops >= MAX_GRADIENT_LAPLACE_LOOPS)
+		if (loops >= max_laplace_loops && configuration->use_loop_cap)
 		{
 			is_within_tolerance = false;
 		}
@@ -95,7 +106,7 @@ void LightningGenerator::performLightningStep()
 		is_within_tolerance = calculateGridStep();
 		loops++;
 
-		if (loops >= MAX_GRADIENT_LAPLACE_LOOPS)
+		if (loops >= max_laplace_loops)
 		{
 			is_within_tolerance = false;
 		}
@@ -157,9 +168,10 @@ void LightningGenerator::initialiseGrid()
 
 	lightning_points.clear();
 
-	MAX_GRADIENT_LAPLACE_LOOPS = std::max(configuration->y_size * 1.5 + 20, double(50)); // todo: take a look at this?
 	reached_edge = false;
 
+	//max_laplace_loops = std::max(configuration->y_size * 1.5 + 20, double(50)); // moved to set vars, makes more sense there, this formula also deprecated
+	
 	createStartingGrid();
 
 	for (int z = 0; z < configuration->z_size; z++)
@@ -520,4 +532,3 @@ void LightningGenerator::indivGridStep_multithread(int z, int y, int x, bool& is
 		is_tolerance = true;
 	}
 }
-
