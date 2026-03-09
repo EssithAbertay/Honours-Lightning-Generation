@@ -298,7 +298,7 @@ void Controller::render(Config & configuration)
 				ImGui::TableSetColumnIndex(6);
 				ImGui::Text("%s", x.resetting_volume ? "True" : "False");
 				ImGui::TableSetColumnIndex(7);
-				ImGui::Text("%.1f", x.gradient_tolerance);
+				ImGui::Text("%.3f", x.gradient_tolerance);
 				ImGui::TableSetColumnIndex(8);
 				ImGui::Text("%s",  x.loop_cap_enabled ? "True" : "False");
 				ImGui::TableSetColumnIndex(9);
