@@ -1,10 +1,11 @@
 #pragma once
 #include <map>
 #include <vector>
+#include "Config.h"
 
 struct TestConditions // struct to store conditions of test
 {
-
+	SavedGeneration setup;
 };
 
 

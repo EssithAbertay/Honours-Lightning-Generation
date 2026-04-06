@@ -1,0 +1,42 @@
+Targeting Test
+Setup Info 
+X Size:5
+Y Size: 5
+Z Size:5
+Eta:1
+Candidates From Air:0
+Multithread:0
+Reset Volume Between Steps:1
+Gradient Tolerance:0.005
+Use Loop Cap:1
+Max Laplace Loops:7
+Use Target:1
+Target X:0
+Target Z:0
+Target Lambda:0.05
+Results: X,Z,Number of Strikes
+0 0 0
+1 0 1
+2 0 0
+3 0 0
+4 0 0
+0 1 1
+1 1 1
+2 1 1
+3 1 0
+4 1 0
+0 2 1
+1 2 0
+2 2 0
+3 2 0
+4 2 0
+0 3 0
+1 3 0
+2 3 0
+3 3 0
+4 3 0
+0 4 0
+1 4 0
+2 4 0
+3 4 0
+4 4 0

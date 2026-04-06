@@ -35,9 +35,12 @@ void App::Update()
         TestData this_test;
 
 
+
         if (lightning_config.test_type == TEST_TYPE::time_test)
         {
             std::ofstream timing_file("times.txt");
+            timing_file << "Timing Test" << "\n";
+            lightning_config.writeSetupToFile(timing_file);
             lightning_config.times.clear();
 
             for (int x = 5; x <= lightning_config.max_dimension; x += lightning_config.dimension_increment)
@@ -97,6 +100,9 @@ void App::Update()
         else if (lightning_config.test_type == TEST_TYPE::target_test)
         {
             std::ofstream target_file("targets.txt");
+            target_file << "Targeting Test" << "\n";
+            lightning_config.writeSetupToFile(target_file);
+
 
             auto points = lightning.getLightningPointsPtr();
             for (int i = 0; i < lightning_config.targets_to_test; i++)
@@ -105,20 +111,23 @@ void App::Update()
                 this_test.target_results.struck_cells[index(points->back().x, points->back().z)]++;
                 Render();
             }
-
+            target_file << "Results: X,Z,Number of Strikes" << "\n";
             for (int z = 0; z < lightning_config.z_size; z++)
             {
                 for (int x = 0; x < lightning_config.x_size; x++)
                 {
-                    target_file << x << " " << z << " " << this_test.target_results.struck_cells[index(x, z)] << " ";
+                    target_file << x << " " << z << " " << this_test.target_results.struck_cells[index(x, z)] << "\n";
                 }
-                target_file << "\n";
             }
             
             target_file.close();
         }
         lightning_config.is_perform_test = false;
         
+        SavedGeneration this_test_setup = lightning_config.getSetup(); // this is done at the end so as to get time
+        this_test.conditions.setup = this_test_setup;
+        //todo add target
+
         tests.push_back(this_test);
     }
     else if (lightning_config.is_regenerate_this_frame)
@@ -130,20 +139,10 @@ void App::Update()
         auto time_at_end = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_at_end - time_at_start);
 
-        SavedGeneration temp;
-        temp.x_size = lightning_config.x_size;
-        temp.y_size = lightning_config.y_size;
-        temp.z_size = lightning_config.z_size;
-        temp.eta = lightning_config.eta;
+        SavedGeneration temp = lightning_config.getSetup();
         temp.time = duration.count();
-        temp.grid_steps = lightning_config.grid_steps;
-        temp.candidates_from_air = lightning_config.candidates_from_air;
-        temp.multithreading_enabled = lightning_config.is_multithread;
-        temp.resetting_volume = lightning_config.reset_vol_between_steps;
-        temp.gradient_tolerance = lightning_config.gradient_tolerance;
-        temp.loop_cap_enabled = lightning_config.use_loop_cap;
-        temp.max_loops = lightning_config.max_laplace_loops;
 
+        //todo add target
 
         lightning_config.saved_info.push_back(temp);
 

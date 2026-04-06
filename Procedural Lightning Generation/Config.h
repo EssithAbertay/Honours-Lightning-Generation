@@ -1,5 +1,8 @@
 #pragma once
 #include <vector>
+#include <fstream>
+#include <iostream>
+#include <iomanip>
 
 enum CAMERA_METHOD
 {
@@ -120,5 +123,35 @@ public:
 	int target_x = 0;
 	int target_y = 0;
 	int target_z = 0;
+
+	SavedGeneration getSetup()
+	{
+		SavedGeneration setup;
+		setup.x_size = x_size;
+		setup.y_size = y_size;
+		setup.z_size = z_size;
+		setup.eta = eta;
+		setup.grid_steps = grid_steps;
+		setup.candidates_from_air = candidates_from_air;
+		setup.multithreading_enabled = is_multithread;
+		setup.resetting_volume = reset_vol_between_steps;
+		setup.gradient_tolerance = gradient_tolerance;
+		setup.loop_cap_enabled = use_loop_cap;
+		setup.max_loops = max_laplace_loops;
+		setup.using_target = use_target;
+		setup.target_x = target_x;
+		setup.target_z = target_z;
+		setup.target_weight = target_lambda;
+
+
+		//todo add target, add time
+
+		return setup;
+	}
+
+	void writeSetupToFile(std::ofstream & file)
+	{
+		file <<"Setup Info \n" << "X Size:" << x_size << "\nY Size: " << y_size << "\nZ Size:" << z_size << "\nEta:" << eta << "\nCandidates From Air:" << candidates_from_air << "\nMultithread:" << is_multithread << "\nReset Volume Between Steps:" << reset_vol_between_steps << "\nGradient Tolerance:" << gradient_tolerance << "\nUse Loop Cap:" << use_loop_cap << "\nMax Laplace Loops:" << max_laplace_loops << "\nUse Target:"  << use_target << "\nTarget X:" << target_x << "\nTarget Z:" << target_z << "\nTarget Lambda:" << target_lambda << "\n";
+	}
 };
 
