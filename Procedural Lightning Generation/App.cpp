@@ -96,6 +96,8 @@ void App::Update()
         }
         else if (lightning_config.test_type == TEST_TYPE::target_test)
         {
+            std::ofstream target_file("targets.txt");
+
             auto points = lightning.getLightningPointsPtr();
             for (int i = 0; i < lightning_config.targets_to_test; i++)
             {
@@ -103,8 +105,20 @@ void App::Update()
                 this_test.target_results.struck_cells[index(points->back().x, points->back().z)]++;
                 Render();
             }
+
+            for (int z = 0; z < lightning_config.z_size; z++)
+            {
+                for (int x = 0; x < lightning_config.x_size; x++)
+                {
+                    target_file << x << " " << z << " " << this_test.target_results.struck_cells[index(x, z)] << " ";
+                }
+                target_file << "\n";
+            }
+            
+            target_file.close();
         }
         lightning_config.is_perform_test = false;
+        
         tests.push_back(this_test);
     }
     else if (lightning_config.is_regenerate_this_frame)
