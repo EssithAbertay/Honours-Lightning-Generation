@@ -9,6 +9,15 @@ void LightningGenerator::setVars()
 {
 	tolerance = configuration->gradient_tolerance;
 
+	if (configuration->include_border_cells)
+	{
+		laplace_func = &LightningGenerator::calculateLaplace;
+	}
+	else
+	{
+		laplace_func = &LightningGenerator::calculateLaplaceNoBorders;
+	}
+
 	if (configuration->use_calculated_loops)
 	{
 		max_laplace_loops = configuration->y_size * configuration->loop_multiplier;
@@ -68,7 +77,15 @@ void LightningGenerator::performLightningStep_optimised()
 
 	while (is_within_tolerance)
 	{
-		is_within_tolerance = calculateGridStep();
+
+		if (configuration->is_multithread)
+		{
+			is_within_tolerance = calculateGridStep_multithread();
+		}
+		else
+		{
+			is_within_tolerance = calculateGridStep();
+		}
 		loops++;
 
 		if (loops >= max_laplace_loops && configuration->use_loop_cap)
@@ -209,9 +226,8 @@ void LightningGenerator::initialiseGrid()
 
 void LightningGenerator::checkCandidacy(int x_pos, int y_pos, int z_pos)
 {
-	// check if cell has lightning on border
-	bool is_ground_candidate_found = false;
-
+	// check if cell has lightning on border, just use reached_edge, does the same thing
+	//bool is_ground_candidate_found = false;
 
 	for (int x = -1; x <= 1; x++)
 	{
@@ -219,21 +235,17 @@ void LightningGenerator::checkCandidacy(int x_pos, int y_pos, int z_pos)
 		{
 			for (int z = -1; z <= 1; z++)
 			{
-				if (x_pos + x >= configuration->x_size || y_pos + y >= configuration->y_size || z_pos + z >= configuration->z_size) continue;  // if checking cells that are out of bounds skip
+				if (x_pos + x >= configuration->x_size || y_pos + y >= configuration->y_size || z_pos + z >= configuration->z_size || x_pos + x <  0 || y_pos + y < 0 || z_pos + z < 0) continue;  // if checking cells that are out of bounds skip
 
 				if (x == 0 && y == 0 && z == 0) continue;// skip middle cell
-
-				if (y_pos + y < 0) continue; //temp fix // why is this here?????
-				if (x_pos + x < 0) continue; //temp fix // why is this here?????
-				if (z_pos + z < 0) continue; //temp fix // why is this here?????
 
 				if (starting_flat[index(x_pos + x, y_pos + y, z_pos + z)] == 3) continue; //skip boundaries 
 
 				if (potentials_flat[index(x_pos + x,y_pos + y,z_pos + z)] == 0 ) // if a surrounding cell is lightning then this is a candidate
 				{
-					if (starting_flat[index(x_pos + x, y_pos + y, z_pos + z)] == 1) // check if candidate ground is next to lightning
+					if (starting_flat[index(x_pos, y_pos, z_pos)] == 1) // check if this candidate is ground
 					{
-						is_ground_candidate_found = true;
+						//is_ground_candidate_found = true;
 						reached_edge = true;
 					}
 
@@ -248,11 +260,11 @@ void LightningGenerator::checkCandidacy(int x_pos, int y_pos, int z_pos)
 					temp.parent_y = y_pos + y;
 					temp.parent_z = z_pos + z;
 
-					if (is_ground_candidate_found)
+					if (reached_edge)
 					{
 						candidates.clear();
 						candidates.push_back(temp);
-						break;
+						return;
 					}
 
 					candidates.push_back(temp);
@@ -279,7 +291,13 @@ void LightningGenerator::collectCandidates()
 				{
 					continue;  
 				}
+
 				checkCandidacy(x, y, z);
+
+				if (reached_edge) // if reached the edge return
+				{
+					return;
+				}
 			}
 		}
 	}
@@ -291,7 +309,7 @@ void LightningGenerator::collectCandidates_optimised()
 	visited_lightning.clear();
 
 	candidates.clear();
-	bool is_ground_candidate_found = false;
+	//bool is_ground_candidate_found = false;
 
 	for (auto& point : lightning_points) // for each lightning cell
 	{
@@ -312,9 +330,9 @@ void LightningGenerator::collectCandidates_optimised()
 					// if it's ground we want to only select it
 
 					//if (starting[point.z + z][point.y + y][point.x + x] == 1) // check if candidate ground is next to lightning
-					if (starting_flat[index(point.x + x, point.y + y, point.z + z)] == 1) // check if candidate ground is next to lightning
+					if (starting_flat[index(point.x + x, point.y + y, point.z + z)] == 1) // check if candidate ground is next to lightning, as we check every cell around a lightning it shouldnt matter the order we do it in
 					{
-						is_ground_candidate_found = true;
+						//is_ground_candidate_found = true;
 						reached_edge = true;
 
 						std::cout << "found ground" << std::endl;
@@ -357,11 +375,11 @@ void LightningGenerator::collectCandidates_optimised()
 
 					// if it was a ground we get rid of the rest
 
-					if (is_ground_candidate_found)
+					if (reached_edge)
 					{
 						candidates.clear();
 						candidates.push_back(temp);
-						break;
+						return; // using a return so we leave properly
 					}
 
 
@@ -380,9 +398,40 @@ void LightningGenerator::selectLightningCell()
 
 	float total_potential = 0;
 
-	for (int i = 0; i < candidates.size(); i++)
+
+	if (configuration->use_target) // todo: fix large weighting bug
 	{
-		total_potential += pow(candidates[i].potential, configuration->eta);
+		int targetx = configuration->target_x;
+		int targety = configuration->target_y;
+		int targetz = configuration->target_z;
+
+		for (int i = 0; i < candidates.size(); i++)
+		{
+
+			// find distance to the target
+			int dx = targetx - candidates[i].x;
+			int dy = targety - candidates[i].y;
+			int dz = targetz - candidates[i].z;
+
+			float distance = sqrtf((dx * dx) + (dy * dy) + (dz * dz));
+
+			// the closer to target the greater the weighting on the potential
+
+			float distance_weight = expf(-configuration->target_lambda * distance);
+			//std::cout << distance << ":" << distance_weight << std::endl;
+
+			candidates[i].distance_weight = distance_weight;
+			candidates[i].potential *= distance_weight;
+
+			total_potential += pow(candidates[i].potential, configuration->eta);
+		}
+	}
+	else
+	{
+		for (int i = 0; i < candidates.size(); i++)
+		{
+			total_potential += pow(candidates[i].potential, configuration->eta);
+		}
 	}
 
 	for (auto& x : candidates)
@@ -391,7 +440,7 @@ void LightningGenerator::selectLightningCell()
 	}
 
 	// taken from cpp reference  https://en.cppreference.com/w/cpp/numeric/random/generate_canonical.html
-	float rnd = std::generate_canonical<float, 10>(gen);
+	float rnd = std::generate_canonical<float, 16>(gen);
 
 	int chosen_candidate = 0;
 
@@ -438,23 +487,77 @@ void LightningGenerator::resetPotentialGrid()
 
 float LightningGenerator::calculateLaplace(int x_pos, int y_pos, int z_pos)
 {
-	float left = potentials_flat[index(x_pos, y_pos - 1, z_pos)];
-	float right = potentials_flat[index(x_pos, y_pos + 1, z_pos)];
-	float forward = potentials_flat[index(x_pos, y_pos, z_pos + 1)];
-	float backward = potentials_flat[index(x_pos, y_pos, z_pos - 1)];
-	float up = potentials_flat[index(x_pos - 1, y_pos, z_pos)];
-	float down = potentials_flat[index(x_pos + 1, y_pos, z_pos)];
+		float left = potentials_flat[index(x_pos, y_pos - 1, z_pos)];
+		float right = potentials_flat[index(x_pos, y_pos + 1, z_pos)];
+		float forward = potentials_flat[index(x_pos, y_pos, z_pos + 1)];
+		float backward = potentials_flat[index(x_pos, y_pos, z_pos - 1)];
+		float up = potentials_flat[index(x_pos - 1, y_pos, z_pos)];
+		float down = potentials_flat[index(x_pos + 1, y_pos, z_pos)];
 
-	float average = left + right + forward + backward + up + down;
-	average /= 6;
+		float average = left + right + forward + backward + up + down;
+		average /= 6;
 
-	return average;
+		//return average;
+}
+
+float LightningGenerator::calculateLaplaceNoBorders(int x_pos, int y_pos, int z_pos)
+{
+
+	// use comparisons to avoid boundaries
+
+	float sum = 0.0f;
+	int count = 0;
+
+	// left
+	if (starting_flat[index(x_pos, y_pos - 1, z_pos)] != 3) 
+	{
+		sum += potentials_flat[index(x_pos, y_pos - 1, z_pos)];
+		count++;
+	}
+
+	// right
+	if (starting_flat[index(x_pos, y_pos + 1, z_pos)] != 3) 
+	{
+		sum += potentials_flat[index(x_pos, y_pos + 1, z_pos)];
+		count++;
+	}
+
+	// forward
+	if (starting_flat[index(x_pos, y_pos, z_pos + 1)] != 3) 
+	{
+		sum += potentials_flat[index(x_pos, y_pos, z_pos + 1)];
+		count++;
+	}
+
+	// backward
+	if (starting_flat[index(x_pos, y_pos, z_pos - 1)] != 3) 
+	{
+		sum += potentials_flat[index(x_pos, y_pos, z_pos - 1)];
+		count++;
+	}
+
+	// up
+	if (starting_flat[index(x_pos - 1, y_pos, z_pos)] != 3) 
+	{
+		sum += potentials_flat[index(x_pos - 1, y_pos, z_pos)];
+		count++;
+	}
+
+	// down
+	if (starting_flat[index(x_pos + 1, y_pos, z_pos)] != 3) 
+	{
+		sum += potentials_flat[index(x_pos + 1, y_pos, z_pos)];
+		count++;
+	}
+
+	return sum / count;
 }
 
 bool LightningGenerator::calculateGridStep()
 {
 	grid_steps_made++; // todo: do this with config instead!
 
+	
 	bool is_within_tolerance = false;
 
 	for (int z = 1; z < configuration->z_size - 1; z++)
@@ -468,7 +571,7 @@ bool LightningGenerator::calculateGridStep()
 					continue;
 				}
 
-				float new_value = calculateLaplace(x, y, z);
+				float new_value = (this->*laplace_func)(x, y, z);
 				float old_value = potentials_flat[index(x, y, z)];
 
 				new_potentials_flat[index(x, y, z)] = new_value;
@@ -486,49 +589,119 @@ bool LightningGenerator::calculateGridStep()
 	return is_within_tolerance;
 }
 
-void LightningGenerator::indivGridStep()
-{
-}
-
 bool LightningGenerator::calculateGridStep_multithread()
 {
-	grid_steps_made++; // todo: do this with config instead!
-
 	bool is_within_tolerance = false;
 
-	for (int z = 1; z < configuration->z_size - 1; z++)
-	{
-		for (int y = 1; y < configuration->y_size - 1; y++)
-		{
-			for (int x = 1; x < configuration->x_size - 1; x++)
-			{
-				indivGridStep_multithread(z, y, x, is_within_tolerance);
-			}
-		}
-	}
+	grid_steps_made++; // todo: do this with config instead!
 
-	std::swap(potentials_flat, new_potentials_flat);
+	sycl::buffer<float, 1> potentials_buffer(potentials_flat.data(), sycl::range<1>(configuration->x_size * configuration->y_size * configuration->z_size));
+	sycl::buffer<float, 1> starting_buffer(starting_flat.data(), sycl::range<1>(configuration->x_size * configuration->y_size * configuration->z_size));
+
+	sycl::buffer<float, 1> new_potentials_buffer(new_potentials_flat.data(), sycl::range<1>(configuration->x_size * configuration->y_size * configuration->z_size));
+
+	int x_size = configuration->x_size;
+	int y_size = configuration->y_size;
+	int z_size = configuration->z_size;
+
+	float local_tolerance = tolerance;
+
+
+	//try {
+		q.submit([&](sycl::handler& h) {
+			sycl::accessor pot_a(potentials_buffer, h, sycl::read_only);
+			sycl::accessor start_a(starting_buffer, h, sycl::read_only);
+			sycl::accessor new_pot_a(new_potentials_buffer, h, sycl::write_only, sycl::no_init);
+
+			auto reduction_acc = sycl::reduction(&is_within_tolerance, std::logical_or<bool>());
+
+
+			// -2/+1 means we avoid the edges and only deal with internals
+			h.parallel_for<kernels::gridstepKernel>(sycl::range<3>(x_size-2,y_size-2,z_size-2),reduction_acc, [=](sycl::item<3> idx, auto& is_tol) {
+				int x = idx[0] + 1;
+				int y = idx[1] + 1;
+				int z = idx[2] + 1;
+
+				int flat_index = x + (y * x_size) + (z * x_size * y_size);
+
+				if (pot_a[flat_index] != 0 && pot_a[flat_index] != 1) //skip anything with 0 or 1
+				{
+					// todo: this doesn't have the boundary option
+
+					//float left = pot_a[x + (y - 1) * x_size + z * x_size * y_size];
+					//float right = pot_a[x + (y + 1) * x_size + z * x_size * y_size];
+					//float forward = pot_a[x + y * x_size + (z + 1) * x_size * y_size];
+					//float backward = pot_a[x + y * x_size + (z - 1) * x_size * y_size];
+					//float up = pot_a[(x - 1) + y * x_size + z * x_size * y_size];
+					//float down = pot_a[(x + 1) + y * x_size + z * x_size * y_size];
+
+					//float average = (left + right + forward + backward + up + down) / 6.0f;
+					float average = 0.0f;
+					float sum = 0.0f;
+					int count = 0;
+
+					// left
+					if (start_a[x + (y - 1) * x_size + z * x_size * y_size] != 3)
+					{
+						sum += pot_a[x + (y - 1) * x_size + z * x_size * y_size];
+						count++;
+					}
+
+					// right
+					if (start_a[x + (y + 1) * x_size + z * x_size * y_size] != 3)
+					{
+						sum += pot_a[x + (y + 1) * x_size + z * x_size * y_size];
+						count++;
+					}
+
+					// forward
+					if (start_a[x + y * x_size + (z + 1) * x_size * y_size] != 3)
+					{
+						sum += pot_a[x + y * x_size + (z + 1) * x_size * y_size];
+						count++;
+					}
+
+					// backward
+					if (start_a[x + y * x_size + (z - 1) * x_size * y_size] != 3)
+					{
+						sum += pot_a[x + y * x_size + (z - 1) * x_size * y_size];
+						count++;
+					}
+
+					// up
+					if (start_a[(x - 1) + y * x_size + z * x_size * y_size] != 3)
+					{
+						sum += pot_a[(x - 1) + y * x_size + z * x_size * y_size];
+						count++;
+					}
+
+					// down
+					if (start_a[(x + 1) + y * x_size + z * x_size * y_size] != 3)
+					{
+						sum += pot_a[(x + 1) + y * x_size + z * x_size * y_size];
+						count++;
+					}
+
+					average = sum / count;
+
+					new_pot_a[flat_index] = average;
+
+					if (sycl::fabs(pot_a[flat_index] - average) >= local_tolerance) {
+						is_tol.combine(true);  // mark that tolerance exceeded
+					}
+				}
+			});
+		});
+
+		q.wait();
+
+		std::swap(potentials_flat, new_potentials_flat);
+	//}
+	//catch (sycl::exception const& e) {
+	//	std::cout << "SYCL exception: " << e.what() << " category: " << e.category().name() << " code:" << e.code() << std::endl;
+	//}
+
 
 	return is_within_tolerance;
-
-	//sycl::buffer<float,3> potentials_buffer(potentials,sycl::range<3>(configuration->z_size,configuration->y_size,configuration->x_size))
 }
 
-void LightningGenerator::indivGridStep_multithread(int z, int y, int x, bool& is_tolerance)
-{
-	if (potentials_flat[index(x,y,z)] == 0 || potentials_flat[index(x, y, z)] == 1) //skip anything with 0 or 1
-	{
-		return;
-	}
-
-	float new_value = calculateLaplace(x, y, z);
-
-	float old_value = potentials_flat[index(x, y, z)];
-
-	new_potentials_flat[index(x, y, z)] = new_value;
-
-	if (abs(old_value - new_value) >= tolerance)
-	{
-		is_tolerance = true;
-	}
-}

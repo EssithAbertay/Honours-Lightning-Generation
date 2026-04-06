@@ -12,11 +12,9 @@
 class Lightning
 {
 public:
-	Lightning(Config* config)
+	Lightning()
 	{
-		configuration = config;
-
-		generator.setConfig(configuration);
+		
 	};
 
 	~Lightning()
@@ -24,6 +22,12 @@ public:
 
 	};
 
+	void setConfig(Config* config)
+	{
+		configuration = config;
+
+		generator.setConfig(configuration);
+	}
 
 	void regenLightning();
 

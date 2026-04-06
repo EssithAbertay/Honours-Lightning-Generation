@@ -13,6 +13,11 @@
 
 #include <sycl/sycl.hpp>
 
+namespace kernels
+{
+	struct gridstepKernel;
+}
+
 class LightningGenerator
 {
 public:
@@ -51,18 +56,17 @@ private:
 	void resetPotentialGrid();
 	
 	float calculateLaplace(int x_pos, int y_pos, int z_pos);
+	float calculateLaplaceNoBorders(int x_pos, int y_pos, int z_pos);
 
 	bool calculateGridStep();
-	void indivGridStep();
 
 	bool calculateGridStep_multithread();
-	void indivGridStep_multithread(int z, int y, int x, bool & is_tolerance);
-
 
 	struct candidate_cell
 	{
 		int x, y, z, parent_x, parent_y, parent_z;
 		float potential, probability;
+		float distance_weight;
 
 		bool operator==(const candidate_cell& other) const {
 			return x == other.x &&
@@ -78,7 +82,7 @@ private:
 
 	std::vector<float> potentials_flat;
 	std::vector<float> new_potentials_flat;
-	std::vector<float> starting_flat;
+	std::vector<float> starting_flat; // todo: why float? int no?
 
 	std::unordered_set<int> visited_lightning;
 
@@ -97,5 +101,10 @@ private:
 	int grid_steps_made = 0;
 
 	float tolerance = 0;
-};
 
+	// multithreading
+
+	float (LightningGenerator::*laplace_func)(int, int, int);
+
+	sycl::queue q;
+};

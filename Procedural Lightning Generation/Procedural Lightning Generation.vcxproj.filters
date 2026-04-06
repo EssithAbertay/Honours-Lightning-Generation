@@ -95,5 +95,8 @@
     <ClInclude Include="LightningVolume.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TestData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

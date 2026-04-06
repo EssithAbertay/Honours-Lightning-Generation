@@ -28,7 +28,24 @@ void Controller::render(Config & configuration)
 				ImGui::SliderInt("Camera Angle", &configuration.cam_angle, 0, 360);
 			}
 
+			ImGui::TreePop();
+		}
+
+		if (ImGui::TreeNode("Renderer Controls"))
+		{
+			ImGui::Checkbox("Line Mode", &configuration.line_mode);
+
+			ImGui::SeparatorText("Capsule Controls");
+			ImGui::SliderFloat("Radius", &configuration.radius, 0, 1);
+			ImGui::SliderInt("Slices", &configuration.slices, 1, 10);
+			ImGui::SliderInt("Rings", &configuration.rings, 1, 10);
+			
+
+			ImGui::SeparatorText("Other Renderer Options");
+			ImGui::Checkbox("Wireframe Mode", &configuration.wireframe);
 			ImGui::Checkbox("Display Bounding Box", &configuration.is_bounding_box);
+			ImGui::Checkbox("Display Initial Charges", &configuration.is_initial_charge); // todo: fix
+		
 			ImGui::TreePop();
 		}
 
@@ -56,7 +73,23 @@ void Controller::render(Config & configuration)
 
 			ImGui::SliderInt("Eta", &configuration.eta, 1, 10);	
 
-			ImGui::Text("Starting Charges - In Progress");
+		//	ImGui::Checkbox("Include border cells in potential calculation", &configuration.include_border_cells); // this causes weird stuff, user can no longer change it
+
+			ImGui::Checkbox("Use Target", &configuration.use_target);
+
+			if (configuration.use_target)
+			{
+
+				ImGui::SliderInt("Target X", &configuration.target_x, 0, configuration.x_size );
+				ImGui::SliderInt("Target Z", &configuration.target_z, 0, configuration.z_size);
+
+				configuration.target_y = configuration.y_size;
+
+				ImGui::SliderFloat("Weighting", &configuration.target_lambda, 0, 0.1);
+			}
+
+
+			//ImGui::Text("Starting Charges - In Progress");
 
 		/*	std::vector<int> starting_charges;
 			starting_charges.resize(configuration.x_size * configuration.z_size);
@@ -77,49 +110,49 @@ void Controller::render(Config & configuration)
 				}
 			}*/
 
-			static std::vector<int> starting_charges;
-			starting_charges.resize(configuration.x_size * configuration.z_size);
+			//
+			//configuration.starting_charges.resize(configuration.x_size * configuration.z_size);
 
-			const float size = 5.0f;
+			//const float size = 5.0f;
 
-			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+			//ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
 
-			for (int y = 0; y < configuration.z_size; y++)
-			{
-				for (int x = 0; x < configuration.x_size; x++)
-				{
-					if (x > 0)
-						ImGui::SameLine();
+			//for (int y = 0; y < configuration.z_size; y++)
+			//{
+			//	for (int x = 0; x < configuration.x_size; x++)
+			//	{
+			//		if (x > 0)
+			//			ImGui::SameLine();
 
-					int index = y * configuration.x_size + x;
-					bool selected = starting_charges[index] != 0;
+			//		int index = y * configuration.x_size + x;
+			//		bool selected = configuration.starting_charges[index] != 0;
 
-					ImGui::PushID(index);
+			//		ImGui::PushID(index);
 
-					if (selected)
-					{
-						ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(1.0f, 0.9f, 0.2f, 1.0f)); // yellow
-						ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(1.0f, 0.95f, 0.4f, 1.0f));
-						ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(1.0f, 0.8f, 0.1f, 1.0f));
-					}
-					else
-					{
-						ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.4f, 0.4f, 0.4f, 1.0f)); // grey
-						ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.55f, 0.55f, 0.55f, 1.0f));
-						ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.65f, 0.65f, 0.65f, 1.0f));
-					}
+			//		if (selected)
+			//		{
+			//			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(1.0f, 0.9f, 0.2f, 1.0f)); // yellow
+			//			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(1.0f, 0.95f, 0.4f, 1.0f));
+			//			ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(1.0f, 0.8f, 0.1f, 1.0f));
+			//		}
+			//		else
+			//		{
+			//			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.4f, 0.4f, 0.4f, 1.0f)); // grey
+			//			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.55f, 0.55f, 0.55f, 1.0f));
+			//			ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.65f, 0.65f, 0.65f, 1.0f));
+			//		}
 
-					if (ImGui::Selectable("", selected, 0, ImVec2(size, size)))
-					{
-						starting_charges[index] ^= 1;
-					}
+			//		if (ImGui::Selectable("", selected, 0, ImVec2(size, size)))
+			//		{
+			//			configuration.starting_charges[index] ^= 1;
+			//		}
 
-					ImGui::PopStyleColor(3);
-					ImGui::PopID();
-				}
-			}
+			//		ImGui::PopStyleColor(3);
+			//		ImGui::PopID();
+			//	}
+			//}
 
-			ImGui::PopStyleVar();
+			//ImGui::PopStyleVar();
 
 			ImGui::SeparatorText("Optimisations");
 
@@ -188,16 +221,38 @@ void Controller::render(Config & configuration)
 
 	ImGui::Begin("Testing", NULL);
 
+		ImGui::SeparatorText("Timing test controls");
 		ImGui::SliderInt("Dimension increment", &configuration.dimension_increment, 1, 10);
 		ImGui::SliderInt("Generation times per dimension", &configuration.number_to_average, 1, 10);
 
-		if (ImGui::Button("Perform Timing Test"))
+		ImGui::SeparatorText("Target test controls");
+		ImGui::InputInt("Number to test", &configuration.targets_to_test, 1, 10);
+
+
+		ImGui::Text("Test Type");
+		static int e = 0;
+		ImGui::RadioButton("Timing Test", &e, 0); ImGui::SameLine();
+		ImGui::RadioButton("Target Test", &e, 1); 
+
+		if (ImGui::Button("Perform Test"))
 		{
 			configuration.is_perform_test = true;
-			configuration.x_size = 5;
-			configuration.y_size = 5;
-			configuration.z_size = 5;
-			configuration.is_bounding_box = true;
+			switch (e)
+			{
+			case(0):	
+				configuration.test_type = TEST_TYPE::time_test;
+				configuration.x_size = 5;
+				configuration.y_size = 5;
+				configuration.z_size = 5;
+				configuration.is_bounding_box = true;
+				break;
+			case(1):
+				configuration.test_type = TEST_TYPE::target_test;
+				configuration.use_target = true; // make sure this is enabled
+				break;
+			default:
+				break;
+			}
 		}
 
 		if (!configuration.xs.empty())
@@ -259,6 +314,7 @@ void Controller::render(Config & configuration)
 
 	// display generation parameters and results, time, sizes, eta, methods etc, maybe store all previously generated structures as well,  have them viewable? 
 
+	// todo:: add targeting stuff
 
 	if (ImGui::BeginTable("Generation Info", 10))
 	{

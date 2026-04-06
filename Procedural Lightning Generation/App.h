@@ -3,6 +3,8 @@
 #include "Config.h"
 #include "Lightning.h"
 #include "LightningRenderer.h"
+#include "TestData.h"
+
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -12,7 +14,7 @@ class App
 public:
 	App()
 	{
-
+		lightning.setConfig(&lightning_config);
 	};
 
 	~App()
@@ -30,9 +32,15 @@ private:
 
 	Camera3D camera;
 
-	Lightning lightning = Lightning(&lightning_config);
+	Lightning lightning;
 
 	LightningRenderer renderer = LightningRenderer(lightning.getLightningPointsPtr(), &lightning_config, &camera);
 
+	std::vector<TestData> tests;
+
+	inline int index(int x, int z) // this function should really be in config or smthn, but crunch time
+	{
+		return x + (z * lightning_config.x_size);
+	}
 };
 

@@ -1,27 +1,3 @@
-Size: 25,51,25 Eta:5 Method: Optimised Time:54.000000ms Grid Steps:578
-Size: 25,51,25 Eta:5 Method: Optimised Time:53.000000ms Grid Steps:582
-Size: 25,51,25 Eta:5 Method: Optimised Time:54.000000ms Grid Steps:574
-Size: 25,51,25 Eta:5 Method: Optimised Time:55.000000ms Grid Steps:592
-Size: 25,51,25 Eta:5 Method: Optimised Time:59.000000ms Grid Steps:583
-Size: 25,51,25 Eta:5 Method: Optimised Time:56.000000ms Grid Steps:603
-Size: 25,51,25 Eta:5 Method: Optimised Time:53.000000ms Grid Steps:554
-Size: 25,51,25 Eta:5 Method: Optimised Time:53.000000ms Grid Steps:575
-Size: 25,51,25 Eta:5 Method: Optimised Time:54.000000ms Grid Steps:577
-Size: 25,51,25 Eta:5 Method: Optimised Time:57.000000ms Grid Steps:610
-Size: 25,51,25 Eta:5 Method: Optimised Time:58.000000ms Grid Steps:612
-Size: 25,51,25 Eta:5 Method: Optimised Time:53.000000ms Grid Steps:566
-Size: 33,67,33 Eta:5 Method: Optimised Time:195.000000ms Grid Steps:918
-Size: 33,67,33 Eta:5 Method: Optimised Time:213.000000ms Grid Steps:914
-Size: 33,67,33 Eta:5 Method: Optimised Time:206.000000ms Grid Steps:960
-Size: 33,67,33 Eta:5 Method: Optimised Time:198.000000ms Grid Steps:937
-Size: 33,67,33 Eta:5 Method: Optimised Time:198.000000ms Grid Steps:920
-Size: 33,67,33 Eta:5 Method: Optimised Time:185.000000ms Grid Steps:877
-Size: 33,67,33 Eta:5 Method: Optimised Time:210.000000ms Grid Steps:957
-Size: 33,67,33 Eta:5 Method: Optimised Time:180.000000ms Grid Steps:835
-Size: 33,67,33 Eta:5 Method: Optimised Time:197.000000ms Grid Steps:870
-Size: 50,100,50 Eta:5 Method: Optimised Time:1379.000000ms Grid Steps:1809
-Size: 50,100,50 Eta:10 Method: Optimised Time:1148.000000ms Grid Steps:1523
-Size: 50,100,50 Eta:10 Method: Optimised Time:1046.000000ms Grid Steps:1418
-Size: 50,100,50 Eta:3 Method: Optimised Time:2268.000000ms Grid Steps:2569
-Size: 50,100,50 Eta:10 Method: Optimised Time:1054.000000ms Grid Steps:1428
-Size: 50,100,50 Eta:8 Method: Optimised Time:1031.000000ms Grid Steps:1401
+Size: 50,100,50 Eta:7 Time:3287.000000ms Grid Steps:1459
+Size: 50,100,50 Eta:7 Time:948.000000ms Grid Steps:1534
+Size: 50,100,50 Eta:7 Time:1015.000000ms Grid Steps:1644
