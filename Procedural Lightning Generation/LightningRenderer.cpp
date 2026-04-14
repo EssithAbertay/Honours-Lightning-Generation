@@ -69,7 +69,6 @@ void LightningRenderer::render()
 	{
 		int starting_x = (x_size/2);
 		int starting_z = (z_size/2);
-
 		Vector3 initial_charge_position = {
 		(starting_x) * segment_size,
 		y_start + segment_size,

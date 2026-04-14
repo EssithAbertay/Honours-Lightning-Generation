@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include "json.hpp"
 
 enum CAMERA_METHOD
 {
@@ -79,9 +80,9 @@ public:
 
 	TEST_TYPE test_type = TEST_TYPE::time_test;
 
-	int dimension_increment = 5;
-	int number_to_average = 5;
+	int times_to_test = 5;
 	int targets_to_test = 5;
+	bool render_during_test = true;
 
 	std::vector<float> times;
 	float min_time = std::numeric_limits<float>::max();
@@ -149,9 +150,29 @@ public:
 		return setup;
 	}
 
-	void writeSetupToFile(std::ofstream & file)
+	void writeSetupToFile(std::ofstream & file) // deprecated
 	{
 		file <<"Setup Info \n" << "X Size:" << x_size << "\nY Size: " << y_size << "\nZ Size:" << z_size << "\nEta:" << eta << "\nCandidates From Air:" << candidates_from_air << "\nMultithread:" << is_multithread << "\nReset Volume Between Steps:" << reset_vol_between_steps << "\nGradient Tolerance:" << gradient_tolerance << "\nUse Loop Cap:" << use_loop_cap << "\nMax Laplace Loops:" << max_laplace_loops << "\nUse Target:"  << use_target << "\nTarget X:" << target_x << "\nTarget Z:" << target_z << "\nTarget Lambda:" << target_lambda << "\n";
+	}
+
+	nlohmann::json to_json() const
+	{
+		return {
+			{"x_size", x_size},
+			{"y_size", y_size},
+			{"z_size", z_size},
+			{"eta", eta},
+			{"candidates_from_air", candidates_from_air},
+			{"is_multithread", is_multithread},
+			{"reset_vol_between_steps", reset_vol_between_steps},
+			{"gradient_tolerance", gradient_tolerance},
+			{"use_loop_cap", use_loop_cap},
+			{"max_laplace_loops", max_laplace_loops},
+			{"use_target", use_target},
+			{"target_x", target_x},
+			{"target_z", target_z},
+			{"target_lambda", target_lambda}
+		};
 	}
 };
 

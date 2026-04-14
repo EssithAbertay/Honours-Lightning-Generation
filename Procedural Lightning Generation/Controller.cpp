@@ -85,7 +85,7 @@ void Controller::render(Config & configuration)
 
 				configuration.target_y = configuration.y_size;
 
-				ImGui::SliderFloat("Weighting", &configuration.target_lambda, 0, 0.1);
+				ImGui::SliderFloat("Weighting", &configuration.target_lambda, 0, 0.5);
 			}
 
 
@@ -222,11 +222,10 @@ void Controller::render(Config & configuration)
 	ImGui::Begin("Testing", NULL);
 
 		ImGui::SeparatorText("Timing test controls");
-		ImGui::SliderInt("Dimension increment", &configuration.dimension_increment, 1, 10);
-		ImGui::SliderInt("Generation times per dimension", &configuration.number_to_average, 1, 10);
+		ImGui::InputInt("Number of runs to time", &configuration.times_to_test, 1, 10);
 
 		ImGui::SeparatorText("Target test controls");
-		ImGui::InputInt("Number to test", &configuration.targets_to_test, 1, 10);
+		ImGui::InputInt("Number of strikes to find", &configuration.targets_to_test, 1, 10);
 
 
 		ImGui::Text("Test Type");
@@ -234,17 +233,16 @@ void Controller::render(Config & configuration)
 		ImGui::RadioButton("Timing Test", &e, 0); ImGui::SameLine();
 		ImGui::RadioButton("Target Test", &e, 1); 
 
+		ImGui::Checkbox("Render during test", &configuration.render_during_test);
+
 		if (ImGui::Button("Perform Test"))
 		{
 			configuration.is_perform_test = true;
+			configuration.is_bounding_box = true;
 			switch (e)
 			{
 			case(0):	
 				configuration.test_type = TEST_TYPE::time_test;
-				configuration.x_size = 5;
-				configuration.y_size = 5;
-				configuration.z_size = 5;
-				configuration.is_bounding_box = true;
 				break;
 			case(1):
 				configuration.test_type = TEST_TYPE::target_test;

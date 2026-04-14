@@ -9,6 +9,12 @@
 #include <iostream>
 #include <iomanip>
 
+#include <ctime>
+#include <string>
+#include <filesystem>
+
+#include <json.hpp>
+
 class App
 {
 public:
@@ -41,6 +47,22 @@ private:
 	inline int index(int x, int z) // this function should really be in config or smthn, but crunch time
 	{
 		return x + (z * lightning_config.x_size);
+	}
+
+	inline std::string filename(std::string prefix, std::string folder, std::string extension)
+	{
+		std::filesystem::create_directory(folder);
+
+		std::stringstream to_return;
+		to_return << folder << "/" << prefix;
+
+		auto t = std::time(nullptr);
+		auto tm = *std::localtime(&t);
+
+		to_return << "_";
+		to_return << std::put_time(&tm, "%Y-%m-%d_%H-%M-%S");
+		to_return << extension;
+		return to_return.str();
 	}
 };
 
