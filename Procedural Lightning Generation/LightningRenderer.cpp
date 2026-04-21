@@ -116,3 +116,4 @@ void LightningRenderer::render()
 
 	EndMode3D();
 }
+

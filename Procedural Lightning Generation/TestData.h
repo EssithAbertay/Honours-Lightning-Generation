@@ -1,37 +1,30 @@
 #pragma once
 #include <map>
 #include <vector>
-#include "Config.h"
+
 
 struct TestConditions // struct to store conditions of test
 {
-	SavedGeneration setup;
-};
-
-
-struct TestResults_Time // struct to store result of test
-{
-	std::vector<float> times;
-	float max_time;
-	float min_time;
-	float average_time;
-};
-
-struct TestResults_Target // struct to store result of test
-{
-	std::map<int, int> struck_cells; // first int sotres the index of the cell, second int stores the number of times it has been struck
-};
-
-struct TestResults_Other // struct to store  result of test
-{
-	int number_of_segments;
-	int main_segment_length;
+	int x_size, y_size, z_size;
+	int eta;
+	int grid_steps;
+	bool candidates_from_air;
+	bool multithreading_enabled;
+	bool resetting_volume;
+	float gradient_tolerance;
+	bool loop_cap_enabled;
+	int max_loops;
+	bool using_target;
+	int target_x;
+	int target_z;
+	float target_weight;
 };
 
 struct TestData
 {
 	TestConditions conditions;
-	TestResults_Time time_results;
-	TestResults_Target target_results;
-	TestResults_Other other_results;
+
+	float time;
+	int grid_steps;
+	int number_of_segments;
 };

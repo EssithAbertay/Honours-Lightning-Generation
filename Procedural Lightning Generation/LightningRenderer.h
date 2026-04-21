@@ -6,14 +6,13 @@
 
 #include "LightningCell.h"
 #include "Config.h"
-
+#include "rlgl.h"
 
 class LightningRenderer
 {
 public:
 	LightningRenderer(std::vector<LightningCell>* lightning_points, Config* config, Camera3D* camera) : lightning_points(lightning_points), configuration(config), camera(camera) {};
 	void render();
-	void ExportImageToFile(const char* filename);
 private:
 	std::vector<LightningCell> * lightning_points;
 	Config* configuration;

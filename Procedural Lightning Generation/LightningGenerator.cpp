@@ -9,6 +9,8 @@ void LightningGenerator::setVars()
 {
 	tolerance = configuration->gradient_tolerance;
 
+	
+
 	if (configuration->include_border_cells)
 	{
 		laplace_func = &LightningGenerator::calculateLaplace;
@@ -52,7 +54,7 @@ void LightningGenerator::regenLightning_optimised()
 	}
 
 
-	std::cout << "grid steps" << grid_steps_made << std::endl;
+	//std::cout << "grid steps" << grid_steps_made << std::endl;
 }
 
 void LightningGenerator::regenLightning_unoptimised()
@@ -66,7 +68,7 @@ void LightningGenerator::regenLightning_unoptimised()
 		performLightningStep();
 	}
 
-	std::cout << "grid steps" << grid_steps_made << std::endl;
+	//std::cout << "grid steps" << grid_steps_made << std::endl;
 }
 
 void LightningGenerator::performLightningStep_optimised()
@@ -335,7 +337,7 @@ void LightningGenerator::collectCandidates_optimised()
 						//is_ground_candidate_found = true;
 						reached_edge = true;
 
-						std::cout << "found ground" << std::endl;
+						//std::cout << "found ground" << std::endl;
 					}
 
 					//  define this as a candidate
@@ -407,7 +409,6 @@ void LightningGenerator::selectLightningCell()
 
 		for (int i = 0; i < candidates.size(); i++)
 		{
-
 			// find distance to the target
 			int dx = targetx - candidates[i].x;
 			int dy = targety - candidates[i].y;
@@ -418,12 +419,10 @@ void LightningGenerator::selectLightningCell()
 			// the closer to target the greater the weighting on the potential
 
 			float distance_weight = expf(-configuration->target_lambda * distance);
-			//std::cout << distance << ":" << distance_weight << std::endl;
 
 			candidates[i].distance_weight = distance_weight;
-			candidates[i].potential *= distance_weight;
-
-			total_potential += pow(candidates[i].potential, configuration->eta);
+			float weighted = pow(candidates[i].potential, configuration->eta) * distance_weight;
+			total_potential += weighted;
 		}
 	}
 	else
@@ -436,7 +435,14 @@ void LightningGenerator::selectLightningCell()
 
 	for (auto& x : candidates)
 	{
-		x.probability = (pow(x.potential, configuration->eta)) / total_potential;
+		float weighted = pow(x.potential, configuration->eta);
+
+		if (configuration->use_target) // apply the distance weight again
+		{
+			weighted *= x.distance_weight;
+		}
+
+		x.probability = weighted / total_potential;
 	}
 
 	// taken from cpp reference  https://en.cppreference.com/w/cpp/numeric/random/generate_canonical.html

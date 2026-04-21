@@ -24,10 +24,11 @@ public:
 	};
 
 	void init(bool dark_mode = false);
-	void render(Config & configuration);
+	void render(Config & configuration, std::vector<TestData> & tests);
 
 private:
 	Config config_defaults;
+
 
 	const char* CandidateSelectionToString(bool candidate_selection);
 };
