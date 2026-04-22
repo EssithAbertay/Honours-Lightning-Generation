@@ -13,6 +13,8 @@
 #include <string>
 #include <filesystem>
 
+// nlohmann JSON library is used for JSON purposes
+// https://github.com/nlohmann/json?tab=coc-ov-file
 #include <json.hpp>
 
 class App
@@ -44,12 +46,14 @@ private:
 
 	std::vector<TestData> tests;
 
+
+	// 2d vector flattener index function
 	inline int index(int x, int z) // this function should really be in config or smthn, but crunch time
 	{
 		return x + (z * lightning_config.x_size);
 	}
 
-	inline std::string filename(std::string prefix, std::string folder, std::string extension)
+	inline std::string filename(std::string prefix, std::string folder, std::string extension) // helper function to create file names
 	{
 		std::filesystem::create_directory(folder);
 

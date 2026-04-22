@@ -8,8 +8,8 @@
 #include <random>
 #include <chrono>
 #include <string>
-
 #include <unordered_set>
+#include <algorithm>
 
 #include <sycl/sycl.hpp>
 
@@ -62,7 +62,7 @@ private:
 
 	bool calculateGridStep_multithread();
 
-	struct candidate_cell
+	struct candidate_cell // struct of a candidate cell and comparator for them
 	{
 		int x, y, z, parent_x, parent_y, parent_z;
 		float potential, probability;
@@ -75,7 +75,7 @@ private:
 		}
 	};
 
-	inline int index(int x, int y, int z)
+	inline int index(int x, int y, int z) // flattening function for 3d vector to turn into 1d
 	{
 		return x + (y * configuration->x_size) + z * configuration->x_size * configuration->y_size;
 	}
@@ -104,7 +104,9 @@ private:
 
 	// multithreading
 
+	// pointer to what laplace function is being used, cause it's always the same one now, pretty much deprecated
 	float (LightningGenerator::*laplace_func)(int, int, int);
 
+	
 	sycl::queue q;
 };

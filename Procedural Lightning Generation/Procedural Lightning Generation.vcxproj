@@ -153,9 +153,6 @@
     <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
-    <ClCompile Include="imgui\implot3d.cpp" />
-    <ClCompile Include="imgui\implot3d_items.cpp" />
-    <ClCompile Include="imgui\implot3d_meshes.cpp" />
     <ClCompile Include="imgui\rlImGui.cpp" />
     <ClCompile Include="Lightning.cpp" />
     <ClCompile Include="LightningGenerator.cpp">

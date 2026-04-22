@@ -2,7 +2,7 @@
 
 int main()
 {
-	App app;
+	App app; // create an instance of the application and run it
 
 	app.Run();
 

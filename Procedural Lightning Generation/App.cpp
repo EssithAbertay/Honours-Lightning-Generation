@@ -28,100 +28,157 @@ void App::Run()
 
 void App::Update()
 {
-    std::chrono::milliseconds duration = std::chrono::milliseconds();
-
-    if (lightning_config.is_perform_test) // i still really dont like looping through this many times but what can you do
-    {
-        TestData this_test;
-
-
-
-        if (lightning_config.test_type == TEST_TYPE::time_test)
-        {
-            std::ofstream timing_file(filename("times","Results",".json"));
-
+     std::chrono::milliseconds duration = std::chrono::milliseconds();
+  
+    if (lightning_config.is_perform_test) // if testing
+    { 
+        if (lightning_config.test_type == TEST_TYPE::time_test) // what type of test
+        {     
+            std::ofstream timing_file(filename("times","Results/Generation",".json")); //create the file
             nlohmann::ordered_json jsonfile;
-            jsonfile["testype"] = "Targeting";
+
+            // write setup info to file
+            jsonfile["testype"] = "Timing";
             jsonfile["setup"] = lightning_config.to_json();
+            jsonfile["setup"]["eta"] = "N/A";
 
-
- /*           timing_file << "Timing Test" << "\n";
-            lightning_config.writeSetupToFile(timing_file);
-            lightning_config.times.clear();*/
-
-
-            // i think this should be local during the test rather than use config
-            lightning_config.times.clear();
-            lightning_config.max_time = std::numeric_limits<float>::min();
-            lightning_config.min_time = std::numeric_limits<float>::max();
-
-            int total_segment_count = 0;
-            int minimum_segment_count = std::numeric_limits<float>::max();
-            int maximum_segment_count = std::numeric_limits<int>::min();
-
-            auto points = lightning.getLightningPointsPtr();
-
-            // run tests
-            for (int i = 0; i < lightning_config.times_to_test; i++) 
-            {
-                auto time_at_start = std::chrono::high_resolution_clock::now();
-
-                lightning.regenLightning();
-                auto time_at_end = std::chrono::high_resolution_clock::now();
-
-                duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_at_end - time_at_start);
-
-                // store time from each test
-                lightning_config.times.push_back((float)duration.count());
-                lightning_config.max_time = std::max(lightning_config.max_time, (float)duration.count());
-                lightning_config.min_time = std::min(lightning_config.min_time, (float)duration.count());
-
-
-                total_segment_count += points->size();
-                maximum_segment_count = std::max((int)points->size(), maximum_segment_count);
-                minimum_segment_count = std::min((int)points->size(), minimum_segment_count);
-
-
-                if (lightning_config.render_during_test)
-                {
-                    Render(); // very cheeky, means we can watch it in real time, doesnt affect timing
-                }
-            }
-
-            // finding average
-            float average_time = 0;
-            float average_segment_count;
-
-            for (int i = 0; i < lightning_config.times_to_test; i++)
-            {
-                average_time += lightning_config.times[i];
-            }
-            average_time /= lightning_config.times_to_test;
-            average_segment_count = total_segment_count / lightning_config.times_to_test;
-
-
-            jsonfile["average time (ms)"] = average_time;
-            jsonfile["maximum time (ms)"] = lightning_config.min_time;
-            jsonfile["minimum time (ms)"] = lightning_config.max_time;
             
-            jsonfile["average segment count"] = average_segment_count;
-            jsonfile["maximum segment count"] = minimum_segment_count;
-            jsonfile["minimum segment count"] = maximum_segment_count;
+            nlohmann::ordered_json results = nlohmann::json::array();
+
+            int number_of_tests = lightning_config.times_to_test;
+
+            // run tests, testing times at every eta value
+            for (int eta_test = 1; eta_test <= lightning_config.max_eta; eta_test++)
+            {
+                lightning_config.eta = eta_test;
+
+                nlohmann::ordered_json result;
+                result["eta"] = eta_test;
+
+             
+                float max_time = std::numeric_limits<float>::lowest();
+                float min_time = std::numeric_limits<float>::max();
+                std::vector<float> times;
+                float average_time = 0;
+
+                int maximum_segment_count = std::numeric_limits<int>::lowest();
+                int minimum_segment_count = std::numeric_limits<int>::max();
+                std::vector<int> segment_counts;
+                float average_segment_count = 0;
+
+                int maximum_grid_steps = std::numeric_limits<int>::lowest();
+                int minimum_grid_steps = std::numeric_limits<int>::max();
+                std::vector<int> grid_steps;
+                float average_grid_steps = 0;
+
+                auto points = lightning.getLightningPointsPtr();
+
+                for (int i = 0; i < number_of_tests; i++)
+                {
+                    // the test itself
+                    auto time_at_start = std::chrono::high_resolution_clock::now(); 
+                    lightning.regenLightning();
+                    auto time_at_end = std::chrono::high_resolution_clock::now();
+                    duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_at_end - time_at_start); // find time taken
+
+                    float time = duration.count();   
+                    
+                    // gather data
+
+                    int num_of_segments = points->size();
+                    int num_of_grid_steps = lightning_config.grid_steps;
+
+                    times.push_back(time);
+                    segment_counts.push_back(num_of_segments);
+                    grid_steps.push_back(num_of_grid_steps);
+
+                    max_time = std::max(max_time, time);
+                    min_time = std::min(min_time, time);
+                   
+                    maximum_segment_count = std::max(num_of_segments, maximum_segment_count);
+                    minimum_segment_count = std::min(num_of_segments, minimum_segment_count);
+
+                    maximum_grid_steps = std::max(num_of_grid_steps, maximum_grid_steps);
+                    minimum_grid_steps = std::min(num_of_grid_steps, minimum_grid_steps);
 
 
-            lightning_config.avg_times.push_back(average_time);
-            lightning_config.min_times.push_back(lightning_config.min_time);
-            lightning_config.max_times.push_back(lightning_config.max_time);
+                    average_time += time;
+                    average_segment_count += num_of_segments;
+                    average_grid_steps += num_of_grid_steps;
+
+                    if (lightning_config.render_during_test)
+                    {
+                        Render(); // very cheeky, means we can watch it in real time, doesnt affect timing
+                    }
+                }
+
+                // finding averages
+                average_time /= number_of_tests;
+                average_segment_count /= number_of_tests;
+                average_grid_steps /= number_of_tests;
+
+                // adding all data to the json
+
+                result["average time"] = average_time;
+                result["minimum time"] = min_time;
+                result["maximum time"] = max_time;
+
+                nlohmann::json all_times = nlohmann::json::array();
+
+                for (auto t : times)
+                {
+                    all_times.push_back(t);
+                }
+                
+                result["times"] = all_times;
+
+                result["average segment count"] = average_segment_count;
+                result["minimum segment count"] = minimum_segment_count;
+                result["maximum segment count"] = maximum_segment_count;
+
+                nlohmann::json all_segment_counts = nlohmann::json::array();
+
+                for (auto sc : segment_counts)
+                {
+                    all_segment_counts.push_back(sc);
+                }
+
+                result["segment counts"] = all_segment_counts;
+
+                result["average grid steps"] = average_grid_steps;
+                result["minimum grid steps"] = minimum_grid_steps;
+                result["maximum grid steps"] = maximum_grid_steps;
+
+                nlohmann::json all_grid_steps = nlohmann::json::array();
+
+                for (auto gs : grid_steps)
+                {
+                    all_grid_steps.push_back(gs);
+                }
+
+                result["grid steps"] = all_grid_steps;
+
+
+                results.push_back(result);
+            }
+
+            //dumps the json into the file
+
+            jsonfile["results"] = results;
+
 
             timing_file << jsonfile.dump(4);
             timing_file.close();
         }
         else if (lightning_config.test_type == TEST_TYPE::target_test)
         {
-            std::ofstream target_file(filename("targets", "Results", ".json"));   
-            
+            std::ofstream target_file(filename("targets", "Results/Targets", ".json"));   
+
+            std::map<int, int> struck_cells;
+
             nlohmann::ordered_json jsonfile;
 
+            //write setup info
             jsonfile["testype"] = "Targeting";
             jsonfile["setup"] = lightning_config.to_json();
 
@@ -131,7 +188,7 @@ void App::Update()
             for (int i = 0; i < lightning_config.targets_to_test; i++)
             {
                 lightning.regenLightning();
-                this_test.target_results.struck_cells[index(points->back().x, points->back().z)]++;
+                struck_cells[index(points->back().x, points->back().z)]++;
 
                 if (lightning_config.render_during_test)
                 {
@@ -148,7 +205,7 @@ void App::Update()
                     results.push_back({
                         {"x",x},
                         {"z",z},
-                        {"strikes",this_test.target_results.struck_cells[index(x, z)]},
+                        {"strikes",struck_cells[index(x, z)]},
                         });
                 }
             }
@@ -159,14 +216,8 @@ void App::Update()
             target_file.close();
         }
         lightning_config.is_perform_test = false;
-        
-        SavedGeneration this_test_setup = lightning_config.getSetup(); // this is done at the end so as to get times? idk why anymore
-        this_test.conditions.setup = this_test_setup;
-        //todo add target
-
-        tests.push_back(this_test);
     }
-    else if (lightning_config.is_regenerate_this_frame)
+    else if (lightning_config.is_regenerate_this_frame) // if just generating a new lighting
     {
         auto time_at_start = std::chrono::high_resolution_clock::now();
 
@@ -175,27 +226,29 @@ void App::Update()
         auto time_at_end = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_at_end - time_at_start);
 
-        SavedGeneration temp = lightning_config.getSetup();
-        temp.time = duration.count();
+        TestData this_test;
 
-        //todo add target
+        // save the info from this generation for later display
 
-        lightning_config.saved_info.push_back(temp);
+        this_test.conditions = lightning_config.getSetup();
+        this_test.time = duration.count();
+        this_test.grid_steps = lightning_config.grid_steps;
+        this_test.number_of_segments = lightning.getLightningPointsPtr()->size();
 
-        std::cout << "Time Taken: " << duration.count() <<"ms" << std::endl;
+        tests.push_back(this_test);
 
         lightning_config.is_regenerate_this_frame = false;
     }
 }
 
-void App::Render()
+void App::Render() // render everything!
 {
     BeginDrawing();
     ClearBackground(BLACK);
 
     renderer.render();
 
-    imgui_controller.render(lightning_config);
+    imgui_controller.render(lightning_config, tests);
 
     EndDrawing();
 }

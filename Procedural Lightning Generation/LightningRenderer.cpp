@@ -29,7 +29,7 @@ void LightningRenderer::render()
 	float radius;
 	float angle;
 
-	switch (configuration->cam_method)
+	switch (configuration->cam_method) //update the camera, either rotates around generated structure, or is user controlled
 	{
 	case rotating:
 		UpdateCamera(camera, CAMERA_ORBITAL);
@@ -50,22 +50,16 @@ void LightningRenderer::render()
 		break;
 	}
 
-
-
-
-
 	BeginMode3D(*camera);
 
-
-
-	if (configuration->is_bounding_box)
+	if (configuration->is_bounding_box) // draw the bounding box if enabled
 	{
 		DrawCubeWires(centre, x_size*segment_size, y_size * segment_size, z_size * segment_size, RAYWHITE);
 	}
 
 	float y_start = segment_size * (y_size -1.5); // -1.5 to align with volume
 
-	if (configuration->is_initial_charge) // todo: fix this
+	if (configuration->is_initial_charge) // draw starting charge location if enabled
 	{
 		int starting_x = (x_size/2);
 		int starting_z = (z_size/2);
@@ -78,7 +72,7 @@ void LightningRenderer::render()
 		DrawCubeWires(initial_charge_position, segment_size, segment_size, segment_size, GREEN);
 	}
 
-	if (configuration->use_target) // todo: fix this
+	if (configuration->use_target) //draw target location if enabled
 	{
 
 		Vector3 target_position = {
@@ -91,11 +85,13 @@ void LightningRenderer::render()
 	}
 
 
-	//
+	// draws the lightning
 	for (int i = 0; i < lightning_points->size(); i++)
 	{
 		Vector3 start_pos = { lightning_points->at(i).parent_x * segment_size, y_start - (lightning_points->at(i).parent_y * segment_size) + y_offset, lightning_points->at(i).parent_z * segment_size };
 		Vector3 end_pos = { lightning_points->at(i).x * segment_size, y_start - (lightning_points->at(i).y * segment_size) + y_offset, lightning_points->at(i).z * segment_size };
+
+		// user can render as lines or capsules or wireframe capsules
 
 		if (configuration->line_mode)
 		{

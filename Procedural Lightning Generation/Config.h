@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include "json.hpp"
+#include "TestData.h"
 
 enum CAMERA_METHOD
 {
@@ -20,7 +21,6 @@ enum TEST_TYPE
 struct SavedGeneration
 {
 	int x_size, y_size, z_size;
-	float time;
 	int eta;
 	int grid_steps;
 	bool candidates_from_air;
@@ -29,7 +29,6 @@ struct SavedGeneration
 	float gradient_tolerance;
 	bool loop_cap_enabled;
 	int max_loops;
-
 	bool using_target;
 	int target_x;
 	int target_z;
@@ -43,6 +42,7 @@ struct Config
 {
 public:
 	int max_dimension = 100;
+	int max_eta = 10;
 
 	int x_size = 5;
 	int y_size = 5;
@@ -90,17 +90,6 @@ public:
 
 	int grid_steps = 0;
 
-
-	// graphing most recent
-
-	std::vector<float> xs, ys, zs;
-	std::vector<float> avg_times, min_times, max_times;
-
-
-	// storing generation data
-
-	std::vector<SavedGeneration> saved_info;
-
 	// camera
 	CAMERA_METHOD cam_method = rotating;
 	int cam_angle = 0;
@@ -125,9 +114,9 @@ public:
 	int target_y = 0;
 	int target_z = 0;
 
-	SavedGeneration getSetup()
+	TestConditions getSetup()
 	{
-		SavedGeneration setup;
+		TestConditions setup;
 		setup.x_size = x_size;
 		setup.y_size = y_size;
 		setup.z_size = z_size;
@@ -143,10 +132,6 @@ public:
 		setup.target_x = target_x;
 		setup.target_z = target_z;
 		setup.target_weight = target_lambda;
-
-
-		//todo add target, add time
-
 		return setup;
 	}
 

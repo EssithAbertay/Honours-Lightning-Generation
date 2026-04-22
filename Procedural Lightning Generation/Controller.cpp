@@ -6,10 +6,15 @@ void Controller::init(bool dark_mode)
     rlImGuiSetup(dark_mode);
 }
 
-void Controller::render(Config & configuration)
+void Controller::render(Config & configuration, std::vector<TestData>& tests)
 {
+	// Dear ImGui controls
+	// https://github.com/ocornut/imgui
+	// ui panels that allow user control over all parameters in the program
+	// also has panel for testing
+	// and panel with table of results and setup info
+
     rlImGuiBegin();
-	ImPlot3D::CreateContext();
 
 	ImGui::Begin("Controls", NULL);
 
@@ -71,9 +76,9 @@ void Controller::render(Config & configuration)
 		{	
 			ImGui::SeparatorText("General");
 
-			ImGui::SliderInt("Eta", &configuration.eta, 1, 10);	
+			ImGui::SliderInt("Eta", &configuration.eta, 1, configuration.max_eta);	
 
-		//	ImGui::Checkbox("Include border cells in potential calculation", &configuration.include_border_cells); // this causes weird stuff, user can no longer change it
+		//	ImGui::Checkbox("Include border cells in potential calculation", &configuration.include_border_cells); // this caused weird stuff, user can no longer change it
 
 			ImGui::Checkbox("Use Target", &configuration.use_target);
 
@@ -85,74 +90,9 @@ void Controller::render(Config & configuration)
 
 				configuration.target_y = configuration.y_size;
 
-				ImGui::SliderFloat("Weighting", &configuration.target_lambda, 0, 0.5);
+				ImGui::SliderFloat("Weighting", &configuration.target_lambda, 0, 0.1);
 			}
 
-
-			//ImGui::Text("Starting Charges - In Progress");
-
-		/*	std::vector<int> starting_charges;
-			starting_charges.resize(configuration.x_size * configuration.z_size);
-
-			const float size = 3;
-			for (int y = 0; y < configuration.z_size; y++)
-			{
-				for (int x = 0; x < configuration.x_size; x++)
-				{
-					if (x > 0)
-						ImGui::SameLine();
-					ImGui::PushID(y * configuration.z_size + x);
-					if (ImGui::Selectable("", starting_charges[y * configuration.z_size + x] != 0, 0, ImVec2(size, size)))
-					{
-						starting_charges[y * configuration.z_size + x] ^= 1;
-					}
-					ImGui::PopID();
-				}
-			}*/
-
-			//
-			//configuration.starting_charges.resize(configuration.x_size * configuration.z_size);
-
-			//const float size = 5.0f;
-
-			//ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
-
-			//for (int y = 0; y < configuration.z_size; y++)
-			//{
-			//	for (int x = 0; x < configuration.x_size; x++)
-			//	{
-			//		if (x > 0)
-			//			ImGui::SameLine();
-
-			//		int index = y * configuration.x_size + x;
-			//		bool selected = configuration.starting_charges[index] != 0;
-
-			//		ImGui::PushID(index);
-
-			//		if (selected)
-			//		{
-			//			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(1.0f, 0.9f, 0.2f, 1.0f)); // yellow
-			//			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(1.0f, 0.95f, 0.4f, 1.0f));
-			//			ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(1.0f, 0.8f, 0.1f, 1.0f));
-			//		}
-			//		else
-			//		{
-			//			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.4f, 0.4f, 0.4f, 1.0f)); // grey
-			//			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.55f, 0.55f, 0.55f, 1.0f));
-			//			ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.65f, 0.65f, 0.65f, 1.0f));
-			//		}
-
-			//		if (ImGui::Selectable("", selected, 0, ImVec2(size, size)))
-			//		{
-			//			configuration.starting_charges[index] ^= 1;
-			//		}
-
-			//		ImGui::PopStyleColor(3);
-			//		ImGui::PopID();
-			//	}
-			//}
-
-			//ImGui::PopStyleVar();
 
 			ImGui::SeparatorText("Optimisations");
 
@@ -221,8 +161,8 @@ void Controller::render(Config & configuration)
 
 	ImGui::Begin("Testing", NULL);
 
-		ImGui::SeparatorText("Timing test controls");
-		ImGui::InputInt("Number of runs to time", &configuration.times_to_test, 1, 10);
+		ImGui::SeparatorText("Generation test controls");
+		ImGui::InputInt("Number of runs", &configuration.times_to_test, 1, 10);
 
 		ImGui::SeparatorText("Target test controls");
 		ImGui::InputInt("Number of strikes to find", &configuration.targets_to_test, 1, 10);
@@ -253,120 +193,77 @@ void Controller::render(Config & configuration)
 			}
 		}
 
-		if (!configuration.xs.empty())
-		{
-			if (ImPlot3D::BeginPlot("X & Y") ){
-
-				ImPlot3D::SetupAxesLimits(
-					0, 30,        // X
-					0, 30,        // Y
-					0, 1600     // Z (time)
-				);
-
-				ImPlot3D::PlotScatter("X & Y", configuration.xs.data() , configuration.ys.data(), configuration.avg_times.data(), configuration.xs.size());
 		
-				ImPlot3D::EndPlot();
-			}
-
-			if (ImPlot3D::BeginPlot("X&Z")) {
-
-				ImPlot3D::SetupAxesLimits(
-					0, 30,        // X
-					0, 30,        // Y
-					0, 1600     // Z (time)
-				);
-
-				ImPlot3D::PlotScatter("X & Z", configuration.xs.data(), configuration.zs.data(), configuration.avg_times.data(), configuration.xs.size());
-				ImPlot3D::EndPlot();
-			}
-
-			if (ImPlot3D::BeginPlot("Y&Z")) {
-
-				ImPlot3D::SetupAxesLimits(
-					0, 30,        // X
-					0, 30,        // Y
-					0, 1600     // Z (time)
-				);
-
-				ImPlot3D::PlotScatter("Y & Z", configuration.ys.data(), configuration.zs.data(), configuration.avg_times.data(), configuration.xs.size());
-				ImPlot3D::EndPlot();
-			}
-		}
-		
-	
 	ImGui::End();
 	
 	ImGui::Begin("Previous Results", NULL);
 
-	if (ImGui::Button("Write data to file (will overwrite previous)"))
-	{
-		std::ofstream data_file("data.txt");
-
-		for (auto x : configuration.saved_info) // todo: write data to file
-		{
-			data_file << "Size: " << x.x_size << "," << x.y_size << "," << x.z_size << " Eta:" << std::fixed << x.eta << " Time:" << std::fixed << x.time << "ms" << " Grid Steps:" << std::fixed << x.grid_steps << "\n";
-		}
-
-		data_file.close();
-	}
-
-	// display generation parameters and results, time, sizes, eta, methods etc, maybe store all previously generated structures as well,  have them viewable? 
-
-	// todo:: add targeting stuff
-
-	if (ImGui::BeginTable("Generation Info", 10))
+	// display generation parameters and results, time, sizes, eta, methods etc, maybe store all previously generated structures as well,  have them viewable?
+	if (ImGui::BeginTable("Generation Info", 14))
 	{
 		ImGui::TableSetupColumn("Size");
 		ImGui::TableSetupColumn("Eta");
 		ImGui::TableSetupColumn("Time (ms)");
 		ImGui::TableSetupColumn("Grid Steps");
+		ImGui::TableSetupColumn("Segment Count");
 		ImGui::TableSetupColumn("Cell Selection");	
 		ImGui::TableSetupColumn("Multithreading Enabled");
 		ImGui::TableSetupColumn("Resetting Volume");
 		ImGui::TableSetupColumn("Gradient Tolerance");
 		ImGui::TableSetupColumn("Using Loop Cap");
 		ImGui::TableSetupColumn("Max Loops");
-	
+		ImGui::TableSetupColumn("Using Target");
+		ImGui::TableSetupColumn("Target Coords");
+		ImGui::TableSetupColumn("Target Weight");
 		ImGui::TableHeadersRow();
 
 
-		for (auto x : configuration.saved_info)
+		for (auto x : tests)
 		{
 			ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
 				ImGui::Text(
 					"%d, %d, %d",
-					x.x_size,
-					x.y_size,
-					x.z_size);
+					x.conditions.x_size,
+					x.conditions.y_size,
+					x.conditions.z_size);
 				ImGui::TableSetColumnIndex(1);
-				ImGui::Text("%d",x.eta);
+				ImGui::Text("%d",x.conditions.eta);
 				ImGui::TableSetColumnIndex(2);
 				ImGui::Text(" %.0f", x.time);
 				ImGui::TableSetColumnIndex(3);
 				ImGui::Text("%d",x.grid_steps);
 				ImGui::TableSetColumnIndex(4);
-				ImGui::Text("%s", CandidateSelectionToString(x.candidates_from_air));
+				ImGui::Text("%d", x.number_of_segments);
 				ImGui::TableSetColumnIndex(5);
-				ImGui::Text("%s", x.multithreading_enabled ? "True" : "False");
+				ImGui::Text("%s", CandidateSelectionToString(x.conditions.candidates_from_air));
 				ImGui::TableSetColumnIndex(6);
-				ImGui::Text("%s", x.resetting_volume ? "True" : "False");
+				ImGui::Text("%s", x.conditions.multithreading_enabled ? "True" : "False");
 				ImGui::TableSetColumnIndex(7);
-				ImGui::Text("%.3f", x.gradient_tolerance);
+				ImGui::Text("%s", x.conditions.resetting_volume ? "True" : "False");
 				ImGui::TableSetColumnIndex(8);
-				ImGui::Text("%s",  x.loop_cap_enabled ? "True" : "False");
+				ImGui::Text("%.3f", x.conditions.gradient_tolerance);
 				ImGui::TableSetColumnIndex(9);
-				ImGui::Text("%d", x.max_loops);
+				ImGui::Text("%s",  x.conditions.loop_cap_enabled ? "True" : "False");
+				ImGui::TableSetColumnIndex(10);
+				ImGui::Text("%d", x.conditions.max_loops);
+				//
+				ImGui::TableSetColumnIndex(11);
+				ImGui::Text("%s", x.conditions.using_target ? "True" : "False");
+				ImGui::TableSetColumnIndex(12);
+				ImGui::Text(
+					"%d, %d",
+					x.conditions.target_x,
+					x.conditions.target_z);
+				ImGui::TableSetColumnIndex(13);
+				ImGui::Text("%.2f", x.conditions.target_weight);				
+
 		}
 		ImGui::EndTable();
 	}
 
-
-
 	ImGui::End();
 
-
-	ImPlot3D::DestroyContext();
     rlImGuiEnd();
 }
 

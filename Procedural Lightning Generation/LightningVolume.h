@@ -2,7 +2,7 @@
 #include <vector>
 #include "Config.h"
 
-class LightningVolume
+class LightningVolume // helper class for lightning volumes, deprecated
 {
 public:
 	LightningVolume();

@@ -2,8 +2,6 @@
 #include "imgui.h"
 #include "rlImGui.h"
 #include "Config.h"
-#include "implot3d.h"
-#include "implot3d_internal.h"
 
 #include "string"
 #include <fstream>

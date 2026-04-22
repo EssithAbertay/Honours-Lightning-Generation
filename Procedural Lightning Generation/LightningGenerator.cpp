@@ -7,22 +7,24 @@ LightningGenerator::LightningGenerator()
 
 void LightningGenerator::setVars()
 {
+	// at the start of each generation we have some stuff to set, like wghat laplace function to use, despite the option being deprecat
+
 	tolerance = configuration->gradient_tolerance;
 
-	
+	//if (configuration->include_border_cells)
+	//{
+	//	laplace_func = &LightningGenerator::calculateLaplace;
+	//}
+	//else
+	//{
+		laplace_func = &LightningGenerator::calculateLaplaceNoBorders; // other option was deprecated
+	//}
 
-	if (configuration->include_border_cells)
-	{
-		laplace_func = &LightningGenerator::calculateLaplace;
-	}
-	else
-	{
-		laplace_func = &LightningGenerator::calculateLaplaceNoBorders;
-	}
+		// know how many gradient loops to use in advance
 
 	if (configuration->use_calculated_loops)
 	{
-		max_laplace_loops = configuration->y_size * configuration->loop_multiplier;
+		max_laplace_loops = configuration->y_size * configuration->loop_multiplier; // user chooses a multiplier, defaults to 1.5 so that it goes ground to air every time
 
 		configuration->max_laplace_loops = max_laplace_loops; // set this so that it saves the data correctly
 	}
@@ -36,19 +38,19 @@ void LightningGenerator::regenLightning_optimised()
 {
 	grid_steps_made = 0;
 
-	initialiseGrid();
+	initialiseGrid(); // setup grid
 
-	// need to set an initial lightning point when checking candidates against lightning cells
+	// need to set an initial lightning point when checking candidates against lightning cells so that there isnt a null errror
 	if(!configuration->candidates_from_air)
 	{
-		int starting_x = configuration->x_size / 2;
+		int starting_x = configuration->x_size / 2; //place the starting charge in the middle of the sky
 		int starting_z = configuration->z_size / 2;
 		LightningCell intialCharge = LightningCell(starting_x, 0, starting_z, starting_x, 0, starting_z);
 
 		lightning_points.push_back(intialCharge);
 	}
 
-	while (!reached_edge)
+	while (!reached_edge) //keep stepping until on ground
 	{
 		performLightningStep_optimised();
 	}
@@ -57,9 +59,9 @@ void LightningGenerator::regenLightning_optimised()
 	//std::cout << "grid steps" << grid_steps_made << std::endl;
 }
 
-void LightningGenerator::regenLightning_unoptimised()
+void LightningGenerator::regenLightning_unoptimised() // deprecated
 {
-	grid_steps_made = 0;
+	grid_steps_made = 0; // same as with the optimised version, just this one uses other functions and doesnt require an initial charge as checks against air not lightning
 
 	initialiseGrid();
 
@@ -77,7 +79,7 @@ void LightningGenerator::performLightningStep_optimised()
 
 	int loops = 0;
 
-	while (is_within_tolerance)
+	while (is_within_tolerance) // perform adjacent gradient until tolernace is reached
 	{
 
 		if (configuration->is_multithread)
@@ -90,31 +92,31 @@ void LightningGenerator::performLightningStep_optimised()
 		}
 		loops++;
 
-		if (loops >= max_laplace_loops && configuration->use_loop_cap)
+		if (loops >= max_laplace_loops && configuration->use_loop_cap) // if it's being used and the loop cap is reached just break out, no matter if within tolerance
 		{
 			is_within_tolerance = false;
 		}
 
 	}
 
-	if (!configuration->candidates_from_air)
+	if (!configuration->candidates_from_air) // depending on user choice, collect candidates from air or lighnting
 	{
-		collectCandidates_optimised();
+		collectCandidates_optimised(); // collect from lightning
 	}
 	else
 	{
-		collectCandidates();
+		collectCandidates(); // collect from air
 	}
 
-	selectLightningCell();
+	selectLightningCell(); // select cell from candidates collected
 
-	if (configuration->reset_vol_between_steps)
+	if (configuration->reset_vol_between_steps) // if selected to reset the volume, the volume is reset
 	{
 		resetPotentialGrid();
 	}
 }
 
-void LightningGenerator::performLightningStep()
+void LightningGenerator::performLightningStep() //deprecated, use optimised
 {
 	bool is_within_tolerance = true;
 
@@ -149,23 +151,25 @@ void LightningGenerator::createStartingGrid()
 
 				if (y == 0) //check for ceiling
 				{
-					starting_flat[idx] = 3;
+					starting_flat[idx] = 3; // ceiling/ same as walls
 				}
 				else if (y == configuration->y_size - 1) // check for ground
 				{
-					starting_flat[idx] = 1;
+					starting_flat[idx] = 1; // ground
 				}
 				else if (x == 0 || x == configuration->x_size - 1 || z == 0 || z == configuration->z_size - 1) // check for walls
 				{
-					starting_flat[idx] = 3;
+					starting_flat[idx] = 3; // walls
 				}
-				else // air
+				else
 				{
-					starting_flat[idx] = 0;
+					starting_flat[idx] = 0;  // air
 				}
 			}
 		}
 	}
+
+	// place initial charge
 
 	int starting_x = configuration->x_size / 2;
 	int starting_z = configuration->z_size / 2;
@@ -228,9 +232,7 @@ void LightningGenerator::initialiseGrid()
 
 void LightningGenerator::checkCandidacy(int x_pos, int y_pos, int z_pos)
 {
-	// check if cell has lightning on border, just use reached_edge, does the same thing
-	//bool is_ground_candidate_found = false;
-
+	// check every cell surrounding air cell
 	for (int x = -1; x <= 1; x++)
 	{
 		for (int y = -1; y <= 1; y++)
@@ -251,6 +253,8 @@ void LightningGenerator::checkCandidacy(int x_pos, int y_pos, int z_pos)
 						reached_edge = true;
 					}
 
+					// create a temporary candidate cell and fill with info
+
 					candidate_cell temp;
 
 					temp.potential = potentials_flat[index(x_pos,y_pos,z_pos)];
@@ -262,16 +266,16 @@ void LightningGenerator::checkCandidacy(int x_pos, int y_pos, int z_pos)
 					temp.parent_y = y_pos + y;
 					temp.parent_z = z_pos + z;
 
-					if (reached_edge)
+					if (reached_edge) // if the candidate cell is a ground cell, it's the only one to check
 					{
 						candidates.clear();
-						candidates.push_back(temp);
+						candidates.push_back(temp);			
 						return;
 					}
 
-					candidates.push_back(temp);
+					candidates.push_back(temp); // make new candidate
 
-					x = 2; y = 2; z = 2; // skip out the check cause we knw it's a candidate // why not just use a break? or similar?
+					x = 2; y = 2; z = 2; // skip out the check cause we know it's a candidate // why not just use a return? or similar?
 				}
 			}
 		}
@@ -282,13 +286,13 @@ void LightningGenerator::collectCandidates()
 {
 	candidates.clear();
 
+	// check every air cell, for if its a candidate, if we reach the ground then return, otherwise continue checking, we dont always reach the ground, in fact it's rare
 	for (int z = 0; z < configuration->z_size; z++)
 	{
 		for (int y = 0; y < configuration->y_size; y++)
 		{
 			for (int x = 0; x < configuration->x_size; x++)
 			{
-				//if (potentials[z][y][x] == 0) //skip current lightning cells or boundaries
 				if (potentials_flat[index(x,y,z)] == 0) //skip current lightning cells or boundaries
 				{
 					continue;  
@@ -311,7 +315,6 @@ void LightningGenerator::collectCandidates_optimised()
 	visited_lightning.clear();
 
 	candidates.clear();
-	//bool is_ground_candidate_found = false;
 
 	for (auto& point : lightning_points) // for each lightning cell
 	{
@@ -356,16 +359,6 @@ void LightningGenerator::collectCandidates_optimised()
 
 					duplicate = visited_lightning.contains(index(temp.x, temp.y, temp.z));
 					
-
-					//for (auto& x : candidates) // dont like doing it like this, should use a map/set instead
-					//{
-					//	if (temp == x)
-					//	{
-					//		duplicate = true;
-					//		break;
-					//	}
-					//}
-					
 					if (duplicate)
 					{
 						continue;
@@ -384,7 +377,6 @@ void LightningGenerator::collectCandidates_optimised()
 						return; // using a return so we leave properly
 					}
 
-
 					visited_lightning.insert(index(temp.x, temp.y, temp.z));
 					candidates.push_back(temp);
 				}
@@ -396,10 +388,12 @@ void LightningGenerator::collectCandidates_optimised()
 void LightningGenerator::selectLightningCell()
 {
 	// formula for probability
-	// https://onlinelibrary.wiley.com/cms/asset/6dcd580c-06ae-421c-acf7-f5449d06a5e4/cav1760-math-0002.png
+	// https://ieeexplore.ieee.org/document/1348357
+	
+	// Formula for DBM proability is from
+	// Kim, T. and Lin, M.C. (2004).Physically based animation and rendering of lightning. 12th Pacific Conference on Computer Graphics and Applications, 2004. PG 2004. Proceedings. (pp.267–275).Available at : https://doi.org/10.1109/PCCGA.2004.1348357
 
 	float total_potential = 0;
-
 
 	if (configuration->use_target) // todo: fix large weighting bug
 	{
@@ -419,38 +413,54 @@ void LightningGenerator::selectLightningCell()
 			// the closer to target the greater the weighting on the potential
 
 			float distance_weight = expf(-configuration->target_lambda * distance);
+			
+			//distance_weight = std::max((float)0.001, distance_weight); // if 0 or below strange behaviour occurs
+
+			/*candidates[i].distance_weight = distance_weight;
+
+			float weighted = pow(candidates[i].potential, configuration->eta) * distance_weight;
+			total_potential += weighted;*/
+
 
 			candidates[i].distance_weight = distance_weight;
-			float weighted = pow(candidates[i].potential, configuration->eta) * distance_weight;
-			total_potential += weighted;
+			candidates[i].potential *= distance_weight;
+
+			total_potential += pow(candidates[i].potential, configuration->eta); // total the potentials
 		}
 	}
 	else
 	{
 		for (int i = 0; i < candidates.size(); i++)
 		{
-			total_potential += pow(candidates[i].potential, configuration->eta);
+			total_potential += pow(candidates[i].potential, configuration->eta); // total the potentials with no weighting
 		}
 	}
+
+	//for (auto& x : candidates)
+	//{
+	//	float weighted = pow(x.potential, configuration->eta);
+
+	//	if (configuration->use_target) // apply the distance weight again
+	//	{
+	//		weighted *= x.distance_weight;
+	//	}
+
+	//	x.probability = weighted / total_potential;
+	//}
 
 	for (auto& x : candidates)
 	{
-		float weighted = pow(x.potential, configuration->eta);
-
-		if (configuration->use_target) // apply the distance weight again
-		{
-			weighted *= x.distance_weight;
-		}
-
-		x.probability = weighted / total_potential;
+		x.probability = (pow(x.potential, configuration->eta)) / total_potential; // find the probaility based on the potentials of each
 	}
 
-	// taken from cpp reference  https://en.cppreference.com/w/cpp/numeric/random/generate_canonical.html
+	// function for generating a random number from, function generates a float between 0 and 1
+	// https://en.cppreference.com/w/cpp/numeric/random/generate_canonical.html
 	float rnd = std::generate_canonical<float, 16>(gen);
 
 	int chosen_candidate = 0;
 
-	for (int i = 0; i < candidates.size(); i++) {
+	//subtracts from rnd if rnd is larger than the probabilty, otherwise selects as the chosen cell
+	for (int i = 0; i < candidates.size(); i++) { 
 		if (rnd < candidates[i].probability)
 		{
 			chosen_candidate = i;
@@ -461,8 +471,10 @@ void LightningGenerator::selectLightningCell()
 
 	candidate_cell chosen = candidates[chosen_candidate];
 
+	// adds the chosed cell to the points
 	lightning_points.push_back(LightningCell(chosen.x, chosen.y, chosen.z, chosen.parent_x, chosen.parent_y, chosen.parent_z));
 
+	// updates points
 	potentials_flat[index(chosen.x, chosen.y, chosen.z)] = 0;
 	new_potentials_flat[index(chosen.x, chosen.y, chosen.z)] = 0;
 
@@ -563,8 +575,9 @@ bool LightningGenerator::calculateGridStep()
 {
 	grid_steps_made++; // todo: do this with config instead!
 
-	
 	bool is_within_tolerance = false;
+
+	// takes each cell, and finds potential, the swaps to new vector
 
 	for (int z = 1; z < configuration->z_size - 1; z++)
 	{
@@ -572,7 +585,7 @@ bool LightningGenerator::calculateGridStep()
 		{
 			for (int x = 1; x < configuration->x_size - 1; x++)
 			{
-				if (potentials_flat[index(x,y,z)] == 0 || potentials_flat[index(x, y, z)] == 1) //skip anything with 0 or 1
+				if (potentials_flat[index(x,y,z)] == 0 || potentials_flat[index(x, y, z)] == 1) //skip anything with 0 or 1 (ground, boundary, or already lightning)
 				{
 					continue;
 				}
@@ -592,18 +605,20 @@ bool LightningGenerator::calculateGridStep()
 
 	std::swap(potentials_flat, new_potentials_flat);
 
-	return is_within_tolerance;
+	return is_within_tolerance; //return if the largest change was within tolerance or not
 }
 
 bool LightningGenerator::calculateGridStep_multithread()
 {
+	//performs the grid step on the GPU, innefficiencies caused by poor implementation and too many overheads
+
 	bool is_within_tolerance = false;
 
 	grid_steps_made++; // todo: do this with config instead!
 
+	// buffers that will store data
 	sycl::buffer<float, 1> potentials_buffer(potentials_flat.data(), sycl::range<1>(configuration->x_size * configuration->y_size * configuration->z_size));
 	sycl::buffer<float, 1> starting_buffer(starting_flat.data(), sycl::range<1>(configuration->x_size * configuration->y_size * configuration->z_size));
-
 	sycl::buffer<float, 1> new_potentials_buffer(new_potentials_flat.data(), sycl::range<1>(configuration->x_size * configuration->y_size * configuration->z_size));
 
 	int x_size = configuration->x_size;
@@ -615,13 +630,17 @@ bool LightningGenerator::calculateGridStep_multithread()
 
 	//try {
 		q.submit([&](sycl::handler& h) {
+
+			// accessors to read from buffers
 			sycl::accessor pot_a(potentials_buffer, h, sycl::read_only);
 			sycl::accessor start_a(starting_buffer, h, sycl::read_only);
 			sycl::accessor new_pot_a(new_potentials_buffer, h, sycl::write_only, sycl::no_init);
 
+
+			// a reduction accessor so that we don't use an atomic variable when checking tolerance
 			auto reduction_acc = sycl::reduction(&is_within_tolerance, std::logical_or<bool>());
 
-
+			// for each cell we use a thread to find the new potential
 			// -2/+1 means we avoid the edges and only deal with internals
 			h.parallel_for<kernels::gridstepKernel>(sycl::range<3>(x_size-2,y_size-2,z_size-2),reduction_acc, [=](sycl::item<3> idx, auto& is_tol) {
 				int x = idx[0] + 1;
@@ -701,7 +720,7 @@ bool LightningGenerator::calculateGridStep_multithread()
 
 		q.wait();
 
-		std::swap(potentials_flat, new_potentials_flat);
+		std::swap(potentials_flat, new_potentials_flat); // swap the vectors
 	//}
 	//catch (sycl::exception const& e) {
 	//	std::cout << "SYCL exception: " << e.what() << " category: " << e.category().name() << " code:" << e.code() << std::endl;

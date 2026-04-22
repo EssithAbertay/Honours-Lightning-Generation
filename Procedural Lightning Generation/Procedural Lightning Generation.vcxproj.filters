@@ -57,15 +57,6 @@
     <ClCompile Include="LightningGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\implot3d.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\implot3d_items.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\implot3d_meshes.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
     <ClCompile Include="LightningVolume.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

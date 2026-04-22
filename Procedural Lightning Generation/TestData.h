@@ -24,7 +24,7 @@ struct TestData
 {
 	TestConditions conditions;
 
-	float time;
-	int grid_steps;
-	int number_of_segments;
+	float time; // time in ms
+	int grid_steps; // number of grid steps taken during generation
+	int number_of_segments; // number of segments lightning is
 };
