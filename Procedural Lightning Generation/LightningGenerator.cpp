@@ -608,6 +608,10 @@ bool LightningGenerator::calculateGridStep()
 	return is_within_tolerance; //return if the largest change was within tolerance or not
 }
 
+
+// Multithread uses the IntelOne Api, which can be found at the link below
+// https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.html
+
 bool LightningGenerator::calculateGridStep_multithread()
 {
 	//performs the grid step on the GPU, innefficiencies caused by poor implementation and too many overheads
